@@ -22,18 +22,47 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.example.coruabuswear.R
 import com.example.coruabuswear.data.providers.LocationProvider.fetchLocation
 import com.example.coruabuswear.presentation.theme.CoruñaBusWearTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        val location: Location? = fetchLocation(this)
         super.onCreate(savedInstanceState)
+        var location: Location? = null
+        lifecycleScope.launch(Dispatchers.IO) {
+            location = fetchLocation(this@MainActivity)
+            // Call a method to update UI with location on main thread
+            launch(Dispatchers.Main) {
+                if (location != null) {
+                    println("Location not null!!!!!!!!!!!!!")
+                    updateUI(location!!)
+                } else {
+                    println("Location null?????????????????")
+                    updateUINoLocation()
+                }
+            }
+        }
+        Log.d("DEBUG_TAG", "Location: $location")
         setContent {
             WearApp("${location?.latitude.toString()} ${location?.longitude.toString()}")
+        }
+    }
+
+    private fun updateUINoLocation() {
+        setContent {
+            WearApp("No location")
+        }
+    }
+
+    private fun updateUI(location: Location) {
+        setContent {
+            WearApp("${location.latitude} ${location.longitude}")
         }
     }
 }
