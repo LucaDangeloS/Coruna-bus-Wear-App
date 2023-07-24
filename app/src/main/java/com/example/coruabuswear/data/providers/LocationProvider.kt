@@ -20,11 +20,11 @@ object LocationProvider {
     private lateinit var locationManager: LocationManager
     private lateinit var locationListener: LocationListener
 
-    suspend fun fetchLocation(context: Context): Location? {
+    fun fetchLocation(context: Context): Location {
         var location: Location? = null
         fusedLocationClient = getFusedLocationProviderClient(context)
         locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        // WHAT TO DO WITH THIS??
+        // TODO: WHAT TO DO WITH THIS LISTENER?
         locationListener = LocationListener { _location -> println("Location changed: $_location") }
 
         if (ContextCompat.checkSelfPermission(
@@ -50,19 +50,24 @@ object LocationProvider {
 //                locationListener
 //            )
             if (!locationManager.isLocationEnabled) {
-                Log.d("MainTag", "Location not enabled")
+                Log.d("DEBUG_TAG", "Location not enabled")
                 // Request to enable it
             }
         }
         try {
+            // TODO: Add timeout
             location = await(
                 fusedLocationClient.getCurrentLocation(
-                    Priority.PRIORITY_HIGH_ACCURACY,
+                    Priority.PRIORITY_HIGH_ACCURACY, // TODO: Change accuracy according to background/foreground usage
                     null // TODO: Add cancellation token
                 )
             )
+            if (location == null) {
+                throw Exception("Location is null")
+            }
         } catch (e: Exception) {
-            Log.d("DEBUG_TAG", "Exception: $e")
+            Log.d("EXCEPTION_TAG", "Exception: $e")
+            throw e
         }
 
         return location

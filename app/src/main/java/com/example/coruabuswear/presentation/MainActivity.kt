@@ -8,7 +8,6 @@ package com.example.coruabuswear.presentation
 
 import android.location.Location
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -22,36 +21,49 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.example.coruabuswear.R
+import com.example.coruabuswear.data.models.BusStop
+import com.example.coruabuswear.data.providers.BusProvider.fetchStops
 import com.example.coruabuswear.data.providers.LocationProvider.fetchLocation
 import com.example.coruabuswear.presentation.theme.CoruñaBusWearTheme
+import io.reactivex.rxjava3.core.Flowable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var location: Location? = null
-        lifecycleScope.launch(Dispatchers.IO) {
-            location = fetchLocation(this@MainActivity)
-            // Call a method to update UI with location on main thread
-            launch(Dispatchers.Main) {
-                if (location != null) {
-                    println("Location not null!!!!!!!!!!!!!")
-                    updateUI(location!!)
-                } else {
-                    println("Location null?????????????????")
-                    updateUINoLocation()
-                }
+        updateUILoadingLocation()
+        val location = Flowable.fromCallable {
+            fetchLocation(this@MainActivity)
+        }
+        val runBackground = location.subscribeOn(Schedulers.io())
+        val showForeground = runBackground.observeOn(Schedulers.single())
+
+        showForeground.subscribe(
+            { x: Location ->
+                updateUI(x)
             }
-        }
-        Log.d("DEBUG_TAG", "Location: $location")
-        setContent {
-            WearApp("${location?.latitude.toString()} ${location?.longitude.toString()}")
-        }
+        ) { obj: Throwable -> obj.printStackTrace(); updateUINoLocation() }
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            location =fetchLocation(this@MainActivity)
+//            launch(Dispatchers.Main) {
+//                if (location != null) {
+//                    println("Location not null!!!!!!!!!!!!!")
+//                    updateUI(location!!)
+//                } else {
+//                    println("Location null?????????????????")
+//                    updateUINoLocation()
+//                }
+//            }
+//        }
     }
 
     private fun updateUINoLocation() {
@@ -63,6 +75,34 @@ class MainActivity : ComponentActivity() {
     private fun updateUI(location: Location) {
         setContent {
             WearApp("${location.latitude} ${location.longitude}")
+        }
+        // fetch stops in worker thread
+        var stops: List<BusStop>? = null
+
+//        stops = fetchStops(location.latitude, location.longitude, 200, 5)
+        lifecycleScope.launch(Dispatchers.IO) {
+            stops = fetchStops(location.latitude, location.longitude, 200, 5)
+        }
+    }
+
+    private fun updateUILoadingLocation() {
+        setContent {
+            CoruñaBusWearTheme {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colors.background),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+
+                ) {
+                    CircularProgressIndicator(
+                        indicatorColor = MaterialTheme.colors.secondary,
+                        trackColor = MaterialTheme.colors.onBackground.copy(alpha = 0.1f),
+                        strokeWidth = 4.dp
+                    )
+                }
+            }
         }
     }
 }
@@ -76,8 +116,8 @@ fun WearApp(greetingName: String) {
          */
         Column(
                 modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colors.background),
+                    .fillMaxSize()
+                    .background(MaterialTheme.colors.background),
                 verticalArrangement = Arrangement.Center
         ) {
             Greeting(greetingName = greetingName)

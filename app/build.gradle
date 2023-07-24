@@ -67,6 +67,13 @@ dependencies {
     implementation "com.google.android.horologist:horologist-tiles:$horologist_version"
     implementation 'androidx.wear.watchface:watchface-complications-data-source-ktx:1.1.1'
     implementation 'com.google.android.gms:play-services-location:21.0.1'
+
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.11.0"))
+    implementation("com.squareup.okhttp3:okhttp")
+    implementation("com.squareup.okhttp3:logging-interceptor")
+
+    implementation("io.reactivex.rxjava3:rxkotlin:3.0.1")
+
     androidTestImplementation platform('androidx.compose:compose-bom:2022.10.00')
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
