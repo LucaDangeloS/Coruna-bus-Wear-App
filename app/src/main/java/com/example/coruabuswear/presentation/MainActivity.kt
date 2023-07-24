@@ -35,7 +35,7 @@ import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
+import com.example.coruabuswear.data.providers.BusProvider.fetchStopsLinesData
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,16 +44,29 @@ class MainActivity : ComponentActivity() {
         val location = Flowable.fromCallable {
             fetchLocation(this@MainActivity)
         }
-        val runBackground = location.subscribeOn(Schedulers.io())
-        val showForeground = runBackground.observeOn(Schedulers.single())
+        val composed = Flowable.fromCallable {
+            fetchStopsLinesData()
+        }
+        val locationBackground = location.subscribeOn(Schedulers.io())
+        val composedBackground = composed.subscribeOn(Schedulers.io())
+        val locationObserver = locationBackground.observeOn(Schedulers.single())
+        val composedObserver = composedBackground.observeOn(Schedulers.single())
 
-        showForeground.subscribe(
+        val locationCancellation = locationObserver.subscribe(
             { x: Location ->
                 updateUI(x)
             }
         ) { obj: Throwable -> obj.printStackTrace(); updateUINoLocation() }
+
+        val composedCancellation = composedObserver.subscribe(
+            {
+                println(it.first)
+                println(it.second)
+            }
+        ) { obj: Throwable -> obj.printStackTrace() }
+
 //        lifecycleScope.launch(Dispatchers.IO) {
-//            location =fetchLocation(this@MainActivity)
+//            location = fetchLocation(this@MainActivity)
 //            launch(Dispatchers.Main) {
 //                if (location != null) {
 //                    println("Location not null!!!!!!!!!!!!!")
