@@ -9,21 +9,14 @@ data class BusStop (val id: Int, val name: String?) {
     fun updateBuses(buses: List<Bus>) {
         this.buses = buses
     }
-}
 
-fun parseBusStopFromJson(jsonStr: String): BusStop {
-    val json = JSONObject(jsonStr)
-    val id = json.getInt("id")
-    val name = json.getString("nombre")
-    return BusStop(id, name)
-}
-
-fun parseBusStopsFromJsonArray(jsonArray: JSONArray): List<BusStop> {
-    val busStops = mutableListOf<BusStop>()
-    for (i in 0 until jsonArray.length()) {
-        val json = jsonArray.getJSONObject(i)
-        val busStop = parseBusStopFromJson(json.toString())
-        busStops.add(busStop)
+    fun updateDistance(distance: Int) {
+        this.distance = distance
     }
-    return busStops
+
+    @Override
+    override fun toString(): String {
+        return "BusStop(id=$id, name=$name, distance=$distance)"
+    }
 }
+
