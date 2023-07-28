@@ -9,7 +9,6 @@ package com.example.coruabuswear.presentation
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import android.location.LocationListener
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -33,17 +32,16 @@ import androidx.wear.compose.material.Text
 import com.example.coruabuswear.R
 import com.example.coruabuswear.data.ContextHolder.setApplicationContext
 import com.example.coruabuswear.data.local.clearAllSharedPreferences
+import com.example.coruabuswear.data.local.saveBusLine
 import com.example.coruabuswear.data.local.saveBusStop
 import com.example.coruabuswear.data.models.BusStop
 import com.example.coruabuswear.data.providers.BusProvider
+import com.example.coruabuswear.data.providers.BusProvider.fetchBuses
 import com.example.coruabuswear.data.providers.BusProvider.fetchStops
-import com.example.coruabuswear.data.providers.LocationProvider.fetchLocation
 import com.example.coruabuswear.data.providers.LocationProvider.fetchLocationContinuously
-import com.example.coruabuswear.data.providers.LocationProvider.stopFetchingLocation
 import com.example.coruabuswear.presentation.theme.CoruñaBusWearTheme
-import io.reactivex.rxjava3.core.Flowable
-import io.reactivex.rxjava3.schedulers.Schedulers
-import kotlinx.coroutines.CoroutineScope
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -51,23 +49,40 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     private var definitionsUpdated = false
     private var locationUpdated = false
-    private lateinit var locationListener: LocationListener
+    private lateinit var locationListener: LocationCallback
+    private var busStops: List<BusStop> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setApplicationContext(this)
 //        clearAllSharedPreferences(this@MainActivity)
         updateUILoadingLocation()
-        locationListener = LocationListener { _location ->
-            println("!!! Location changed: $_location")
-            if (!locationUpdated) {
-                locationUpdated = true
+//        locationListener = LocationListener { _location ->
+//            println("!!! Location changed: $_location")
+//            if (!locationUpdated) {
+//                locationUpdated = true
+//            }
+//            try {
+//                updateUIWithStops(_location)
+//            } catch (e: Exception) {
+//                Log.d("EXCEPTION_TAG", "Exception: $e")
+//                updateUIError()
+//            }
+//        }
+        locationListener = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                // Handle location updates here
+                val _location = locationResult.lastLocation
+                if (_location != null) {
+                    updateUIWithStops(_location)
+                } else {
+                    Log.d("DEBUG_TAG", "Location is null")
+                }
             }
-            updateUIWithLocation(_location)
         }
-        lifecycleScope.launch(Dispatchers.IO) {
-            fetchLocationContinuously(this@MainActivity, locationListener)
-        }
+//        lifecycleScope.launch(Dispatchers.IO) {
+        fetchLocationContinuously(this@MainActivity, locationListener)
+//        }
 
 //        val location = Flowable.fromCallable {
 //            fetchLocation(this@MainActivity)
@@ -97,6 +112,11 @@ class MainActivity : ComponentActivity() {
 //        }
     }
 
+    // ?????
+//    override fun setContentView(view: View?) {
+//        super.setContentView(view)
+//    }
+
     private fun updateUIUpdatingDefinitions() {
         setContent {
             WearApp("Updating definitions!")
@@ -125,16 +145,15 @@ class MainActivity : ComponentActivity() {
             saveBusStop(context, busStop.id.toString(), busStop)
         }
         lines.forEach { busLine ->
-            saveBusStop(context, busLine.id.toString(), busLine)
+            saveBusLine(context, busLine.id.toString(), busLine)
         }
         Log.d("DEBUG_TAG", "Updated!")
     }
 
-    private fun updateUIWithLocation(location: Location) {
+    private fun updateUIWithStops(location: Location) {
         Log.d("DEBUG_TAG", "Update UI method called")
-        var stops: List<BusStop> = emptyList()
         lifecycleScope.launch(Dispatchers.IO) {
-            stops = try {
+            val stops = try {
                 fetchStops(location.latitude, location.longitude, 300, 3)
             } catch (e: Exception) {
                 if (!definitionsUpdated) {
@@ -148,12 +167,31 @@ class MainActivity : ComponentActivity() {
                 fetchStops(location.latitude, location.longitude, 300, 3)
             }
             withContext(Dispatchers.Main) {
-                updateUIWithStops(stops)
+                updateUIWithBuses(stops)
             }
         }
     }
 
-    private fun updateUIWithStops(stops: List<BusStop>) {
+    // Update the buses in the stops nearby with some Timeout (call every x seconds)
+    private fun updateUIWithBuses(stops: List<BusStop>) {
+        // call th API to get the buses in the stops
+        // update the stops with the buses TODO
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            for (stop in stops) {
+//                try {
+//                    stop.updateBuses(fetchBuses(stop.id))
+//                } catch (e: Exception) {
+//                    Log.d("EXCEPTION_TAG", "Exception: $e")
+//                    updateBusDefinitions(this@MainActivity)
+//                    stop.updateBuses(fetchBuses(stop.id))
+//                }
+//            }
+//            withContext(Dispatchers.Main) {
+//                setContent {
+//                    WearApp("$stops")
+//                }
+//            }
+//        }
         setContent {
             WearApp("$stops")
         }

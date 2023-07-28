@@ -5,91 +5,61 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
-import android.location.LocationListener
 import android.location.LocationManager
-import android.location.LocationRequest
-import android.os.Build
-import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.coruabuswear.presentation.MainActivity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices.getFusedLocationProviderClient
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.Tasks.await
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 object LocationProvider {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var locationManager: LocationManager
 
     @SuppressLint("MissingPermission")
-    fun fetchLocation(context: Context): Location {
+    fun fetchLocation(context: Context): Location? {
         var location: Location? = null
         fusedLocationClient = getFusedLocationProviderClient(context)
-        locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        // TODO: WHAT TO DO WITH THIS LISTENER?
 
         if (!permissionCheck(context)) {
             throw Exception("Permission not granted")
         }
 
-        try {
-            // TODO: Add timeout
-            location = await(
-                fusedLocationClient.getCurrentLocation(
-                    Priority.PRIORITY_HIGH_ACCURACY,
-                    null // TODO: Add cancellation token
-                )
+        // TODO: Add timeout
+        location = await(
+            fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                null
             )
-            if (location == null) {
-                throw Exception("Location is null")
-            }
-        } catch (e: Exception) {
-            Log.d("EXCEPTION_TAG", "Exception: $e")
-            throw e
-        }
+        )
 
         return location
     }
 
     @SuppressLint("MissingPermission")
-    fun fetchLocationContinuously(context: Context, locationListener: LocationListener) {
+    fun fetchLocationContinuously(context: Context, locationListener: LocationCallback) {
         fusedLocationClient = getFusedLocationProviderClient(context)
-        locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
         if (!permissionCheck(context)) {
             throw Exception("Permission not granted")
         }
 
-        CoroutineScope(Dispatchers.Main).launch {
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            locationManager.requestLocationUpdates(
-                LocationManager.FUSED_PROVIDER,
-                20000,
-                40f,
-                locationListener,
-                Looper.getMainLooper()
-            )
-//            } else {
-//                locationManager.requestLocationUpdates(
-//                    LocationManager.GPS_PROVIDER,
-//                    20000,
-//                    40f,
-//                    locationListener,
-//                    Looper.getMainLooper()
-//                )
-//            }
-        }
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 20000)
+            .setMinUpdateDistanceMeters(30f)
+
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest.build(),
+            locationListener,
+            null
+        )
     }
 
-    fun stopFetchingLocation(context: Context, locationListener: LocationListener) {
-        locationManager.removeUpdates(locationListener)
+    fun stopFetchingLocation(context: Context, locationListener: LocationCallback) {
+        fusedLocationClient.removeLocationUpdates(locationListener)
     }
 
     private fun permissionCheck(context: Context): Boolean {
@@ -98,7 +68,7 @@ object LocationProvider {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            Log.d("MainTag", "No permission")
+            Log.d("DEBUG_TAG", "No permission")
             // request both coarse and fine location permissions
             ActivityCompat.requestPermissions(
                 context as MainActivity,
@@ -110,9 +80,11 @@ object LocationProvider {
             )
             permissionCheck(context)
         } else {
-            if (!locationManager.isLocationEnabled) {
+            // Check if location is enabled
+            val locationManager =
+                context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 Log.d("DEBUG_TAG", "Location not enabled")
-                // Request to enable it ?
                 return false
             }
         }
