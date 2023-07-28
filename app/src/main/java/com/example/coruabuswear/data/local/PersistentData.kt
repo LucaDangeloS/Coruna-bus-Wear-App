@@ -1,26 +1,24 @@
 package com.example.coruabuswear.data.local
 import android.content.Context
-import com.example.coruabuswear.data.providers.BusProvider
 import com.google.gson.Gson
-import io.reactivex.rxjava3.core.Flowable
-import io.reactivex.rxjava3.schedulers.Schedulers
 
-fun <T> saveBusStop(context: Context, key: String, obj: T) {
+fun <BusStop> saveBusStop(context: Context, key: String, obj: BusStop) {
     return saveObject("BusStop", context, key, obj)
 }
 
-inline fun <reified T> getBusStop(context: Context, key: String): T? {
-    return getObject("BusStop", context, key)
+inline fun <reified BusStop> getBusStop(context: Context, key: String): BusStop? {
+    return getObject<BusStop>("BusStop", context, key)
 }
 
-fun <T> saveBusLine(context: Context, key: String, obj: T) {
+fun <BusLine> saveBusLine(context: Context, key: String, obj: BusLine) {
     return saveObject("BusLine", context, key, obj)
 }
 
-inline fun <reified T> getBusLine(context: Context, key: String): T? {
-    return getObject("BusLine", context, key)
+inline fun <reified BusLine> getBusLine(context: Context, key: String): BusLine? {
+    return getObject<BusLine>("BusLine", context, key)
 }
 
+// Functions to save and retrieve a custom object from SharedPreferences
 fun <T> saveObject(prefName: String, context: Context, key: String, obj: T) {
     val gson = Gson()
     val json = gson.toJson(obj)
@@ -28,7 +26,6 @@ fun <T> saveObject(prefName: String, context: Context, key: String, obj: T) {
     sharedPreferences.edit().putString(key, json).apply()
 }
 
-// Function to retrieve a custom object from SharedPreferences
 inline fun <reified T> getObject(prefName: String, context: Context, key: String): T? {
     val gson = Gson()
     val sharedPreferences = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
