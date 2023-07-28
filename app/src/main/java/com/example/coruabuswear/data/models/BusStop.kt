@@ -1,10 +1,11 @@
 package com.example.coruabuswear.data.models
 import org.json.JSONArray
 import org.json.JSONObject
+import java.lang.Integer.min
 
 data class BusStop (val id: Int, val name: String?) {
     var distance: Int = 9999
-    lateinit var buses: List<Bus>
+    var buses: List<Bus> = emptyList()
 
     fun updateBuses(buses: List<Bus>) {
         this.buses = buses
@@ -16,7 +17,8 @@ data class BusStop (val id: Int, val name: String?) {
 
     @Override
     override fun toString(): String {
-        return "BusStop(id=$id, name=$name, distance=$distance)"
+        // print sublist og buses, the list can be empty
+        return "BusStop(id=$id, name=$name, distance=$distance, buses=${buses?.subList(0, min(3, buses.size))})"
     }
 }
 

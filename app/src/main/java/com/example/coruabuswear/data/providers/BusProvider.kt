@@ -1,15 +1,13 @@
 package com.example.coruabuswear.data.providers
 
-import android.graphics.Color
-import android.util.Log
 import androidx.compose.ui.graphics.Color as Colorx
 import com.example.coruabuswear.data.ApiConstants.BUS_API_ROOT
 import com.example.coruabuswear.data.ContextHolder.getApplicationContext
+import com.example.coruabuswear.data.local.getBusLine
 import com.example.coruabuswear.data.local.getBusStop
 import com.example.coruabuswear.data.models.Bus
 import com.example.coruabuswear.data.models.BusLine
 import com.example.coruabuswear.data.models.BusStop
-import com.example.coruabuswear.presentation.MainActivity
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
@@ -77,6 +75,41 @@ object BusProvider {
         }
         return busStops
     }
+
+    fun fetchBuses(stopId: Int): List<Bus> {
+        val uri = BUS_API_ROOT +
+            "&dato=${stopId}"+
+            "&func=0"
+
+        val request = Request.Builder()
+            .url(uri)
+            .build()
+
+        val busList = mutableListOf<Bus>()
+
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw IOException("Unexpected code $response")
+            val json = JSONObject(response.body!!.string())
+            // {"parada": 358} TODO
+            val lineas = json.getJSONObject("buses").getJSONArray("lineas")
+            for (i in 0 until lineas.length()) {
+                val linea = lineas.getJSONObject(i)
+                val lineaId = linea.getInt("linea")
+                val busLine = getBusLine<BusLine>(getApplicationContext(), lineaId.toString())
+                    ?: throw Exception("Bus line $lineaId does not exist in local storage")
+
+                val buses = linea.getJSONArray("buses")
+                for (j in 0 until buses.length()) {
+                    val bus = buses.getJSONObject(j)
+                    val busObj = Bus(bus.getInt("bus"), busLine, bus.getInt("tiempo"))
+                    busList += busObj
+                }
+            }
+        }
+        // sort busList by time
+        busList.sortBy { it.remainingTime }
+        return busList
+    }
 }
 
 fun parseBusLineFromJson(jsonStr: String): BusLine {
@@ -112,4 +145,12 @@ fun parseBusStopsFromJsonArray(jsonArray: JSONArray): List<BusStop> {
         busStops.add(busStop)
     }
     return busStops
+}
+
+fun parseBusFromJson(jsonStr: String): Bus {
+    val json = JSONObject(jsonStr)
+    val id = json.getInt("id")
+    val busLine = parseBusLineFromJson(json.getJSONObject("linea").toString())
+    val remainingTime = json.getInt("tiempo")
+    return Bus(id, busLine, remainingTime)
 }

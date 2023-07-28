@@ -13,7 +13,8 @@ data class Bus(val id: Int, val line: BusLine) {
         this.remainingTime = -1
     }
 
-//    fun parseFromJson(json: String): Bus {
-//        return Bus(0, 0, BusLine("", Color(0)))
-//    }
+    @Override
+    override fun toString(): String {
+        return "Bus(id=$id, line=$line, remainingTime=$remainingTime)"
+    }
 }
