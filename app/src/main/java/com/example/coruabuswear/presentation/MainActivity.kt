@@ -15,12 +15,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,7 +32,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.example.coruabuswear.R
 import com.example.coruabuswear.data.ContextHolder.setApplicationContext
 import com.example.coruabuswear.data.local.clearAllSharedPreferences
 import com.example.coruabuswear.data.local.saveBusLine
@@ -57,18 +59,6 @@ class MainActivity : ComponentActivity() {
         setApplicationContext(this)
 //        clearAllSharedPreferences(this@MainActivity)
         updateUILoadingLocation()
-//        locationListener = LocationListener { _location ->
-//            println("!!! Location changed: $_location")
-//            if (!locationUpdated) {
-//                locationUpdated = true
-//            }
-//            try {
-//                updateUIWithStops(_location)
-//            } catch (e: Exception) {
-//                Log.d("EXCEPTION_TAG", "Exception: $e")
-//                updateUIError()
-//            }
-//        }
         locationListener = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 // Handle location updates here
@@ -77,6 +67,7 @@ class MainActivity : ComponentActivity() {
                     updateUIWithStops(_location)
                 } else {
                     Log.d("DEBUG_TAG", "Location is null")
+                    updateUINoLocation()
                 }
             }
         }
@@ -111,11 +102,6 @@ class MainActivity : ComponentActivity() {
 //            }
 //        }
     }
-
-    // ?????
-//    override fun setContentView(view: View?) {
-//        super.setContentView(view)
-//    }
 
     private fun updateUIUpdatingDefinitions() {
         setContent {
@@ -153,7 +139,7 @@ class MainActivity : ComponentActivity() {
     private fun updateUIWithStops(location: Location) {
         Log.d("DEBUG_TAG", "Update UI method called")
         lifecycleScope.launch(Dispatchers.IO) {
-            val stops = try {
+            busStops = try {
                 fetchStops(location.latitude, location.longitude, 300, 3)
             } catch (e: Exception) {
                 if (!definitionsUpdated) {
@@ -167,33 +153,29 @@ class MainActivity : ComponentActivity() {
                 fetchStops(location.latitude, location.longitude, 300, 3)
             }
             withContext(Dispatchers.Main) {
-                updateUIWithBuses(stops)
+                updateUIWithBuses()
             }
         }
     }
 
     // Update the buses in the stops nearby with some Timeout (call every x seconds)
-    private fun updateUIWithBuses(stops: List<BusStop>) {
+    private fun updateUIWithBuses() {
         // call th API to get the buses in the stops
-        // update the stops with the buses TODO
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            for (stop in stops) {
-//                try {
-//                    stop.updateBuses(fetchBuses(stop.id))
-//                } catch (e: Exception) {
-//                    Log.d("EXCEPTION_TAG", "Exception: $e")
-//                    updateBusDefinitions(this@MainActivity)
-//                    stop.updateBuses(fetchBuses(stop.id))
-//                }
-//            }
-//            withContext(Dispatchers.Main) {
-//                setContent {
-//                    WearApp("$stops")
-//                }
-//            }
-//        }
-        setContent {
-            WearApp("$stops")
+        lifecycleScope.launch(Dispatchers.IO) {
+            for (stop in busStops) {
+                try {
+                    stop.updateBuses(fetchBuses(stop.id))
+                } catch (e: Exception) {
+                    Log.d("EXCEPTION_TAG", "Exception: $e")
+                    updateBusDefinitions(this@MainActivity)
+                    stop.updateBuses(fetchBuses(stop.id))
+                }
+            }
+            withContext(Dispatchers.Main) {
+                setContent {
+                    WearApp("$busStops")
+                }
+            }
         }
     }
 
@@ -222,28 +204,34 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun WearApp(greetingName: String) {
     CoruñaBusWearTheme {
-        /* If you have enough items in your list, use [ScalingLazyColumn] which is an optimized
-         * version of LazyColumn for wear devices with some added features. For more information,
-         * see d.android.com/wear/compose.
-         */
-        Column(
+        // Scrollable text
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colors.background)
+        ) {
+            val scrollState = rememberScrollState()
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colors.background),
-                verticalArrangement = Arrangement.Center
-        ) {
-            Greeting(greetingName = greetingName)
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                ShowText(greetingName)
+            }
         }
     }
 }
 
 @Composable
-fun Greeting(greetingName: String) {
+fun ShowText(text: String) {
     Text(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
             color = MaterialTheme.colors.primary,
-            text = stringResource(R.string.hello_world, greetingName)
+//            text = stringResource(R.string.hello_world, greetingName)
+            text = text
     )
 }
 
