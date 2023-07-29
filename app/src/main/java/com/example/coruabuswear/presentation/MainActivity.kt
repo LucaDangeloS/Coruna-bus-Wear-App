@@ -13,15 +13,26 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -30,7 +41,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.compose.material.HorizontalPageIndicator
 import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material.PageIndicatorState
+import com.example.coruabuswear.presentation.theme.CoruñaBusWearTheme
+import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import com.example.coruabuswear.data.ContextHolder.setApplicationContext
 import com.example.coruabuswear.data.local.clearAllSharedPreferences
@@ -41,10 +56,12 @@ import com.example.coruabuswear.data.providers.BusProvider
 import com.example.coruabuswear.data.providers.BusProvider.fetchBuses
 import com.example.coruabuswear.data.providers.BusProvider.fetchStops
 import com.example.coruabuswear.data.providers.LocationProvider.fetchLocationContinuously
-import com.example.coruabuswear.presentation.theme.CoruñaBusWearTheme
+import com.example.coruabuswear.presentation.components.BusStopPage
+import com.example.coruabuswear.presentation.theme.wearColorPalette
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -104,19 +121,19 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updateUIUpdatingDefinitions() {
-        setContent {
+        displayContent {
             WearApp("Updating definitions!")
         }
     }
 
     private fun updateUIError() {
-        setContent {
+        displayContent {
             WearApp("ERROR!")
         }
     }
 
     private fun updateUINoLocation() {
-        setContent {
+        displayContent {
             WearApp("No location")
         }
     }
@@ -172,26 +189,26 @@ class MainActivity : ComponentActivity() {
                 }
             }
             withContext(Dispatchers.Main) {
-                setContent {
-                    WearApp("$busStops")
+                displayContent {
+                    WearApp(busStops)
                 }
             }
         }
     }
 
     private fun updateUILoadingLocation() {
-        setContent {
+        displayContent {
             CoruñaBusWearTheme {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colors.background),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally
 
                 ) {
                     CircularProgressIndicator(
-                        indicatorColor = MaterialTheme.colors.secondary,
+                        indicatorColor = wearColorPalette.secondary,
                         trackColor = MaterialTheme.colors.onBackground.copy(alpha = 0.1f),
                         strokeWidth = 4.dp
                     )
@@ -199,28 +216,88 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun displayContent(composable: @Composable () -> Unit) {
+        setContent {
+            CoruñaBusWearTheme {
+                composable()
+            }
+        }
+    }
 }
 
 @Composable
 fun WearApp(greetingName: String) {
-    CoruñaBusWearTheme {
-        // Scrollable text
-        Box(
+    // Scrollable text
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colors.background)
+    ) {
+        val scrollState = rememberScrollState()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ShowText(greetingName)
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun WearApp(busStops: List<BusStop>) {
+    var currentPageIndex by remember { mutableStateOf(0) }
+    val maxPages = busStops.size
+    val pagerState = rememberPagerState(initialPage = currentPageIndex)
+    val pageIndicatorState: PageIndicatorState = remember {
+        object : PageIndicatorState {
+            override val pageOffset: Float
+                get() = 0f
+            override val selectedPage: Int
+                get() = pagerState.currentPage
+            override val pageCount: Int
+                get() = maxPages
+        }
+    }
+    val paddingValues = PaddingValues(
+        top = 15.dp,
+        bottom = 2.dp,
+        start = 0.dp,
+        end = 0.dp
+    )
+
+    Scaffold (
+        pageIndicator = {
+            HorizontalPageIndicator(
+                pageIndicatorState = pageIndicatorState,
+                selectedColor = MaterialTheme.colors.primary,
+                unselectedColor = MaterialTheme.colors.onBackground.copy(alpha = 0.2f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp)
+            )
+        }
+            ) {
+        HorizontalPager(
+            maxPages,
+            state = pagerState,
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colors.background)
-        ) {
-            val scrollState = rememberScrollState()
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                ShowText(greetingName)
-            }
+                .padding(paddingValues)
+        ) { page ->
+            BusStopPage(busStops[page])
         }
+
+//        LaunchedEffect(pagerState) {
+//            snapshotFlow { pagerState.currentPage }
+//                .distinctUntilChanged()
+//                .collect { currentPageIndex = it }
+//        }
     }
 }
 
@@ -229,7 +306,7 @@ fun ShowText(text: String) {
     Text(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colors.primary,
+            color = wearColorPalette.primary,
 //            text = stringResource(R.string.hello_world, greetingName)
             text = text
     )
