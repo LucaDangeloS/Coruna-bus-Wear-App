@@ -10,7 +10,7 @@ data class Bus(val id: Int, val line: BusLine) {
         this.remainingTime = remainingTime
     }
     init {
-        this.remainingTime = -1
+        this.remainingTime = -2
     }
 
     @Override

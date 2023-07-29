@@ -91,17 +91,22 @@ object BusProvider {
             if (!response.isSuccessful) throw IOException("Unexpected code $response")
             val json = JSONObject(response.body!!.string())
             // {"parada": 358} TODO
-            val lineas = json.getJSONObject("buses").getJSONArray("lineas")
+            var lineas: JSONArray
+            try {
+                lineas = json.getJSONObject("buses").getJSONArray("lineas")
+            } catch (e: Exception) {
+                return emptyList()
+            }
             for (i in 0 until lineas.length()) {
                 val linea = lineas.getJSONObject(i)
-                val lineaId = linea.getInt("linea")
+                val lineaId: Int = linea.getInt("linea")
                 val busLine = getBusLine<BusLine>(getApplicationContext(), lineaId.toString())
                     ?: throw Exception("Bus line $lineaId does not exist in local storage")
 
                 val buses = linea.getJSONArray("buses")
                 for (j in 0 until buses.length()) {
                     val bus = buses.getJSONObject(j)
-                    val busObj = Bus(bus.getInt("bus"), busLine, bus.getInt("tiempo"))
+                    val busObj = Bus(bus.getInt("bus"), busLine, try {bus.getInt("tiempo")} catch (e: Exception) {-1})
                     busList += busObj
                 }
             }
