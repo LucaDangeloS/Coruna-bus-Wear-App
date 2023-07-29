@@ -99,9 +99,6 @@ object BusProvider {
             }
             for (i in 0 until lineas.length()) {
                 val linea = lineas.getJSONObject(i)
-                val lineaId: Int = linea.getInt("linea")
-                val busLine = getBusLine<BusLine>(getApplicationContext(), lineaId.toString())
-                    ?: throw Exception("Bus line $lineaId does not exist in local storage")
 
                 val buses = linea.getJSONArray("buses")
                 for (j in 0 until buses.length()) {
@@ -147,10 +144,11 @@ object BusProvider {
     }
 
     private fun parseBusFromJson(busObj: JSONObject): Bus {
-        val id = busObj.getInt("id")
-        val busLine = parseBusLineFromJson(busObj.getJSONObject("linea"))
+        val lineaId: Int = busObj.getInt("linea")
+        val busLine = getBusLine<BusLine>(getApplicationContext(), lineaId.toString())
+            ?: throw Exception("Bus line $lineaId does not exist in local storage")
         val remainingTime = try {busObj.getInt("tiempo")} catch (e: Exception) {-1}
-        return Bus(id, busLine, remainingTime)
+        return Bus(busObj.getInt("bus"), busLine, remainingTime)
     }
 }
 
