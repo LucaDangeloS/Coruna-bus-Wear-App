@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
@@ -17,7 +18,8 @@ fun AutoResizingText(
     color: Color,
     targetTextSize: TextUnit,
     textAlign: TextAlign = TextAlign.Center,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
+    fontWeight: FontWeight
 ) {
     val textSize = remember {
         mutableStateOf(targetTextSize)
@@ -31,6 +33,7 @@ fun AutoResizingText(
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
         textAlign = textAlign,
+        fontWeight = fontWeight,
         onTextLayout = { textLayoutResult ->
             val lineIndex = textLayoutResult.lineCount - 1
 

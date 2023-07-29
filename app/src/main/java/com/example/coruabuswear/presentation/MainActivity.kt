@@ -47,6 +47,9 @@ import androidx.wear.compose.material.PageIndicatorState
 import com.example.coruabuswear.presentation.theme.CoruñaBusWearTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.TimeText
+import androidx.wear.compose.material.Vignette
+import androidx.wear.compose.material.VignettePosition
 import com.example.coruabuswear.data.ContextHolder.setApplicationContext
 import com.example.coruabuswear.data.local.clearAllSharedPreferences
 import com.example.coruabuswear.data.local.saveBusLine
@@ -64,6 +67,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private var definitionsUpdated = false
@@ -208,7 +214,7 @@ class MainActivity : ComponentActivity() {
 
                 ) {
                     CircularProgressIndicator(
-                        indicatorColor = wearColorPalette.secondary,
+                        indicatorColor = wearColorPalette.primary,
                         trackColor = MaterialTheme.colors.onBackground.copy(alpha = 0.1f),
                         strokeWidth = 4.dp
                     )
@@ -250,7 +256,7 @@ fun WearApp(greetingName: String) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WearApp(busStops: List<BusStop>) {
-    var currentPageIndex by remember { mutableStateOf(0) }
+    val currentPageIndex by remember { mutableStateOf(0) }
     val maxPages = busStops.size
     val pagerState = rememberPagerState(initialPage = currentPageIndex)
     val pageIndicatorState: PageIndicatorState = remember {
@@ -264,8 +270,8 @@ fun WearApp(busStops: List<BusStop>) {
         }
     }
     val paddingValues = PaddingValues(
-        top = 15.dp,
-        bottom = 2.dp,
+        top = 0.dp,
+        bottom = 3.dp,
         start = 0.dp,
         end = 0.dp
     )
@@ -275,11 +281,17 @@ fun WearApp(busStops: List<BusStop>) {
             HorizontalPageIndicator(
                 pageIndicatorState = pageIndicatorState,
                 selectedColor = MaterialTheme.colors.primary,
-                unselectedColor = MaterialTheme.colors.onBackground.copy(alpha = 0.2f),
+                unselectedColor = MaterialTheme.colors.onSecondary.copy(alpha = 0.6f),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp)
             )
+        },
+        timeText = {
+            TimeText()
+        },
+        vignette = {
+            Vignette(vignettePosition = VignettePosition.TopAndBottom)
         }
             ) {
         HorizontalPager(
@@ -292,12 +304,6 @@ fun WearApp(busStops: List<BusStop>) {
         ) { page ->
             BusStopPage(busStops[page])
         }
-
-//        LaunchedEffect(pagerState) {
-//            snapshotFlow { pagerState.currentPage }
-//                .distinctUntilChanged()
-//                .collect { currentPageIndex = it }
-//        }
     }
 }
 
@@ -307,7 +313,6 @@ fun ShowText(text: String) {
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
             color = wearColorPalette.primary,
-//            text = stringResource(R.string.hello_world, greetingName)
             text = text
     )
 }
