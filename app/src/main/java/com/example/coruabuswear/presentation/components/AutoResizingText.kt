@@ -38,7 +38,7 @@ fun AutoResizingText(
             val lineIndex = textLayoutResult.lineCount - 1
 
             if (textLayoutResult.isLineEllipsized(lineIndex)) {
-                textSize.value = textSize.value * 0.9f
+                textSize.value = textSize.value * 0.95f
             }
         }
     )
