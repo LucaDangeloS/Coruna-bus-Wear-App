@@ -27,19 +27,24 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
+import androidx.wear.compose.foundation.CurvedLayout
+import androidx.wear.compose.foundation.CurvedModifier
+import androidx.wear.compose.foundation.CurvedTextStyle
+import androidx.wear.compose.foundation.basicCurvedText
+import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.HorizontalPageIndicator
 import androidx.wear.compose.material.MaterialTheme
@@ -64,12 +69,8 @@ import com.example.coruabuswear.presentation.theme.wearColorPalette
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private var definitionsUpdated = false
@@ -204,8 +205,41 @@ class MainActivity : ComponentActivity() {
 
     private fun updateUILoadingLocation() {
         displayContent {
-            CoruñaBusWearTheme {
-                Column(
+            val endText = ""
+            Scaffold (
+                timeText = {
+                    TimeText(
+                        // reduce font
+                        timeTextStyle =
+                            TextStyle(
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colors.onSecondary,
+                            )
+                        ,
+//                        endLinearContent = {
+//                            Text(
+//                                text = endText,
+//                                color = MaterialTheme.colors.onBackground
+//                            )
+//                        },
+//                        endCurvedContent = {
+//                            basicCurvedText(
+//                                endText,
+//                                style = {
+//                                    CurvedTextStyle(
+//                                        fontSize = 12.sp,
+//                                        color = MaterialTheme.colors.onSecondary,
+//                                    )
+//                                },
+//                            )
+//                        }
+                    )
+                },
+                vignette = {
+                    Vignette(vignettePosition = VignettePosition.TopAndBottom)
+                }
+            ) {
+            Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colors.background),
@@ -215,7 +249,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     CircularProgressIndicator(
                         indicatorColor = wearColorPalette.primary,
-                        trackColor = MaterialTheme.colors.onBackground.copy(alpha = 0.1f),
+                        trackColor = MaterialTheme.colors.onBackground.copy(alpha = 0.3f),
                         strokeWidth = 4.dp
                     )
                 }
@@ -233,8 +267,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun WearApp(greetingName: String) {
-    // Scrollable text
+fun WearApp(text: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -248,7 +281,7 @@ fun WearApp(greetingName: String) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ShowText(greetingName)
+            ShowText(text)
         }
     }
 }
@@ -269,12 +302,6 @@ fun WearApp(busStops: List<BusStop>) {
                 get() = maxPages
         }
     }
-    val paddingValues = PaddingValues(
-        top = 0.dp,
-        bottom = 3.dp,
-        start = 0.dp,
-        end = 0.dp
-    )
 
     Scaffold (
         pageIndicator = {
@@ -288,7 +315,12 @@ fun WearApp(busStops: List<BusStop>) {
             )
         },
         timeText = {
-            TimeText()
+            TimeText(
+                timeTextStyle = TextStyle(
+                    fontSize = 12.sp,
+                ),
+
+            )
         },
         vignette = {
             Vignette(vignettePosition = VignettePosition.TopAndBottom)
@@ -300,7 +332,7 @@ fun WearApp(busStops: List<BusStop>) {
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colors.background)
-                .padding(paddingValues)
+                .padding(bottom = 3.dp)
         ) { page ->
             BusStopPage(busStops[page])
         }

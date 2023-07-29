@@ -25,13 +25,15 @@ import androidx.wear.compose.material.MaterialTheme
 
 @Composable
 fun BusStopPage(stop: BusStop) {
-    val lazyListState = rememberLazyListState()
     val columnPadding = PaddingValues(
         top = 2.dp,
         bottom = 12.dp,
         start = 0.dp,
         end = 0.dp
     )
+    val redRectHeight = 60.dp
+    val stopNameRectHeight = 38.dp
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(0.dp),
@@ -40,13 +42,13 @@ fun BusStopPage(stop: BusStop) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)
+                .height(redRectHeight)
                 .background(MaterialTheme.colors.primary)
 
         ) {
             Box(
                 modifier = Modifier
-                    .height(35.dp)
+                    .height(stopNameRectHeight)
                     .fillMaxWidth(0.55f)
                     .align(Alignment.BottomCenter)
                     .padding(vertical = 1.dp),
@@ -71,6 +73,8 @@ fun BusStopPage(stop: BusStop) {
                 fontSize = 7.sp,
                 fontWeight = FontWeight.Bold,
             )
+
+        //Last updated Text (some timer from when this function is called?)
 
         ScalingLazyColumn(
             modifier = Modifier
