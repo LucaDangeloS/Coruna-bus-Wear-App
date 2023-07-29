@@ -91,7 +91,7 @@ object BusProvider {
             if (!response.isSuccessful) throw IOException("Unexpected code $response")
             val json = JSONObject(response.body!!.string())
             // {"parada": 358} TODO
-            var lineas: JSONArray
+            val lineas: JSONArray
             try {
                 lineas = json.getJSONObject("buses").getJSONArray("lineas")
             } catch (e: Exception) {
@@ -105,9 +105,7 @@ object BusProvider {
 
                 val buses = linea.getJSONArray("buses")
                 for (j in 0 until buses.length()) {
-                    val bus = buses.getJSONObject(j)
-                    val busObj = Bus(bus.getInt("bus"), busLine, try {bus.getInt("tiempo")} catch (e: Exception) {-1})
-                    busList += busObj
+                    busList += parseBusFromJson(buses.getJSONObject(j))
                 }
             }
         }
@@ -115,47 +113,44 @@ object BusProvider {
         busList.sortBy { it.remainingTime }
         return busList
     }
-}
-
-fun parseBusLineFromJson(jsonStr: String): BusLine {
-    val json = JSONObject(jsonStr)
-    val id = json.getInt("id")
-    val name = json.getString("lin_comer")
-    val color = Colorx(android.graphics.Color.parseColor("#${json.getString("color")}"))
-    return BusLine(id, name, color)
-}
-
-fun parseBusLinesFromJsonArray(jsonArray: JSONArray): List<BusLine> {
-    val busLines = mutableListOf<BusLine>()
-    for (i in 0 until jsonArray.length()) {
-        val json = jsonArray.getJSONObject(i)
-        val busLine = parseBusLineFromJson(json.toString())
-        busLines.add(busLine)
+    private fun parseBusLineFromJson(json: JSONObject): BusLine {
+        val id = json.getInt("id")
+        val name = json.getString("lin_comer")
+        val color = Colorx(android.graphics.Color.parseColor("#${json.getString("color")}"))
+        return BusLine(id, name, color)
     }
-    return busLines
-}
 
-fun parseBusStopFromJson(jsonStr: String): BusStop {
-    val json = JSONObject(jsonStr)
-    val id = json.getInt("id")
-    val name = json.getString("nombre")
-    return BusStop(id, name)
-}
-
-fun parseBusStopsFromJsonArray(jsonArray: JSONArray): List<BusStop> {
-    val busStops = mutableListOf<BusStop>()
-    for (i in 0 until jsonArray.length()) {
-        val json = jsonArray.getJSONObject(i)
-        val busStop = parseBusStopFromJson(json.toString())
-        busStops.add(busStop)
+    private fun parseBusLinesFromJsonArray(jsonArray: JSONArray): List<BusLine> {
+        val busLines = mutableListOf<BusLine>()
+        for (i in 0 until jsonArray.length()) {
+            val json = jsonArray.getJSONObject(i)
+            val busLine = parseBusLineFromJson(json)
+            busLines.add(busLine)
+        }
+        return busLines
     }
-    return busStops
+
+    private fun parseBusStopFromJson(json: JSONObject): BusStop {
+        val id = json.getInt("id")
+        val name = json.getString("nombre")
+        return BusStop(id, name)
+    }
+
+    private fun parseBusStopsFromJsonArray(jsonArray: JSONArray): List<BusStop> {
+        val busStops = mutableListOf<BusStop>()
+        for (i in 0 until jsonArray.length()) {
+            val json = jsonArray.getJSONObject(i)
+            val busStop = parseBusStopFromJson(json)
+            busStops.add(busStop)
+        }
+        return busStops
+    }
+
+    private fun parseBusFromJson(busObj: JSONObject): Bus {
+        val id = busObj.getInt("id")
+        val busLine = parseBusLineFromJson(busObj.getJSONObject("linea"))
+        val remainingTime = try {busObj.getInt("tiempo")} catch (e: Exception) {-1}
+        return Bus(id, busLine, remainingTime)
+    }
 }
 
-fun parseBusFromJson(jsonStr: String): Bus {
-    val json = JSONObject(jsonStr)
-    val id = json.getInt("id")
-    val busLine = parseBusLineFromJson(json.getJSONObject("linea").toString())
-    val remainingTime = json.getInt("tiempo")
-    return Bus(id, busLine, remainingTime)
-}
