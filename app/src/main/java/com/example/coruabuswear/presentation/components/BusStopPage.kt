@@ -27,8 +27,8 @@ import androidx.wear.compose.material.MaterialTheme
 fun BusStopPage(stop: BusStop) {
     val lazyListState = rememberLazyListState()
     val columnPadding = PaddingValues(
-        top = 9.dp,
-        bottom = 0.dp,
+        top = 2.dp,
+        bottom = 12.dp,
         start = 0.dp,
         end = 0.dp
     )
