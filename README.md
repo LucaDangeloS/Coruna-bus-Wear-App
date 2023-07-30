@@ -3,6 +3,7 @@ Una aplicación para sacarle provecho a los smartwatches que te permite mirar lo
 
 ### TODO:
 - [ ] Add regular bus updates
+- [ ] Add support for ambient mode
 - [ ] Add manual location updates
 - [ ] Add stops page
 - [ ] Add manual bus updates
