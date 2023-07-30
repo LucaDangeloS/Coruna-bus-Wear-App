@@ -17,11 +17,17 @@ import androidx.wear.compose.material.Text
 import com.example.coruabuswear.data.models.Bus
 import com.example.coruabuswear.data.models.BusStop
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.tiles.ModifiersBuilders.Padding
 
 @Composable
 fun BusStopPage(stop: BusStop) {
@@ -32,7 +38,7 @@ fun BusStopPage(stop: BusStop) {
         end = 0.dp
     )
     val redRectHeight = 60.dp
-    val stopNameRectHeight = 38.dp
+    val stopNameRectHeight = 40.dp
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -49,7 +55,7 @@ fun BusStopPage(stop: BusStop) {
             Box(
                 modifier = Modifier
                     .height(stopNameRectHeight)
-                    .fillMaxWidth(0.55f)
+                    .fillMaxWidth(0.50f)
                     .align(Alignment.BottomCenter)
                     .padding(vertical = 1.dp),
 
@@ -93,11 +99,44 @@ fun BusStopPage(stop: BusStop) {
 
 @Composable
 fun BusListElement(bus: Bus) {
-    Text(
-        text = bus.line.name,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        textAlign = TextAlign.Center
-    )
+            .padding(2.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(bus.line.color, MaterialTheme.colors.background),
+                    startX = 160f,
+                    endX = 450f,
+                    tileMode = androidx.compose.ui.graphics.TileMode.Clamp
+                )
+            )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp, horizontal = 14.dp)
+                .clip(RoundedCornerShape(6.dp)),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = bus.line.name,
+                modifier = Modifier,
+                color = MaterialTheme.colors.onPrimary,
+                textAlign = TextAlign.Left,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = bus.getRemainingTime(),
+                modifier = Modifier,
+                color = MaterialTheme.colors.onBackground,
+                textAlign = TextAlign.Right,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
 }

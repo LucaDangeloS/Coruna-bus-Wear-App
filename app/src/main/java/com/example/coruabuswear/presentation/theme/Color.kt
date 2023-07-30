@@ -12,6 +12,7 @@ val RedTranvias2 = Color(0xffc0372d)
 val RedTranviasSecondary = Color(0xffe30c18)
 val RedTranviasSecondary2 = Color(0xffb00912)
 val Ash = Color(0xff4c4c4c)
+val DarkerAsh = Color(0xff2f2f2f)
 
 internal val wearColorPalette: Colors = Colors(
         primary = RedTranvias,
@@ -23,4 +24,5 @@ internal val wearColorPalette: Colors = Colors(
         onSecondary = Ash,
         onError = Color.Black,
         background = Color.White,
+        onBackground = DarkerAsh,
 )
