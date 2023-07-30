@@ -32,13 +32,12 @@ data class Bus(val id: Int, val line: BusLine) {
     }
 
     fun getRemainingTime(): String {
-        return if (remainingTime == -2) {
-            "N/A"
+        return if (remainingTime == -2 || remainingTime == 0) {
+            "En parada"
         } else if (remainingTime == -1) {
             "<1 min"
-        } else if (remainingTime == 0) {
-            // TODO I18N
-            "En parada"
+        } else if (remainingTime == -3) {
+            "N/A"
         } else {
             "$remainingTime min"
         }
