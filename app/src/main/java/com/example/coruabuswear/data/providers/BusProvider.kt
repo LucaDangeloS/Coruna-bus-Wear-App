@@ -1,5 +1,7 @@
 package com.example.coruabuswear.data.providers
 
+import android.content.Context
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color as Colorx
 import com.example.coruabuswear.data.ApiConstants.BUS_API_ROOT
 import com.example.coruabuswear.data.ContextHolder.getApplicationContext
@@ -102,7 +104,7 @@ object BusProvider {
 
                 val buses = linea.getJSONArray("buses")
                 for (j in 0 until buses.length()) {
-                    busList += parseBusFromJson(buses.getJSONObject(j))
+                    busList += parseBusFromJson(buses.getJSONObject(j).accumulate("linea", linea.getInt("linea")))
                 }
             }
         }
@@ -110,6 +112,25 @@ object BusProvider {
         busList.sortBy { it.remainingTime }
         return busList
     }
+    fun mockBusApi(context: Context): List<Bus> {
+        val initialTime = LocalDateTime.now()
+        println("Mocking bus api")
+        val busList = mutableListOf<Bus>()
+        val busLineBUH = getBusLine<BusLine>(context, "1800")
+        val busLine1A = getBusLine<BusLine>(context, "1900")
+        val busLine11 = getBusLine<BusLine>(context, "1100")
+        val busLine3A = getBusLine<BusLine>(context, "301")
+        val busLine3 = getBusLine<BusLine>(context, "300")
+        val endTime = LocalDateTime.now()
+        busList.add(Bus(5, busLineBUH!!, 15))
+        busList.add(Bus(1, busLine1A!!, 5))
+        busList.add(Bus(2, busLine11!!, 2))
+        busList.add(Bus(3, busLine3A!!, 10))
+        busList.add(Bus(4, busLine3!!, -1))
+        print("Mocking bus api took ${endTime.second - initialTime.second} seconds")
+        return busList
+    }
+
     private fun parseBusLineFromJson(json: JSONObject): BusLine {
         val id = json.getInt("id")
         val name = json.getString("lin_comer")
