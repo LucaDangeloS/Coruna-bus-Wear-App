@@ -18,7 +18,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,7 +31,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
@@ -40,11 +38,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
-import androidx.wear.compose.foundation.CurvedLayout
-import androidx.wear.compose.foundation.CurvedModifier
-import androidx.wear.compose.foundation.CurvedTextStyle
-import androidx.wear.compose.foundation.basicCurvedText
-import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.HorizontalPageIndicator
 import androidx.wear.compose.material.MaterialTheme
@@ -63,6 +56,7 @@ import com.example.coruabuswear.data.models.BusStop
 import com.example.coruabuswear.data.providers.BusProvider
 import com.example.coruabuswear.data.providers.BusProvider.fetchBuses
 import com.example.coruabuswear.data.providers.BusProvider.fetchStops
+import com.example.coruabuswear.data.providers.BusProvider.mockBusApi
 import com.example.coruabuswear.data.providers.LocationProvider.fetchLocationContinuously
 import com.example.coruabuswear.presentation.components.BusStopPage
 import com.example.coruabuswear.presentation.theme.wearColorPalette
@@ -189,10 +183,12 @@ class MainActivity : ComponentActivity() {
             for (stop in busStops) {
                 try {
                     stop.updateBuses(fetchBuses(stop.id))
+//                    stop.updateBuses(mockBusApi(this@MainActivity))
                 } catch (e: Exception) {
                     Log.d("EXCEPTION_TAG", "Exception: $e")
                     updateBusDefinitions(this@MainActivity)
                     stop.updateBuses(fetchBuses(stop.id))
+//                    stop.updateBuses(mockBusApi(this@MainActivity))
                 }
             }
             withContext(Dispatchers.Main) {
@@ -218,9 +214,9 @@ class MainActivity : ComponentActivity() {
                         ,
 //                        endLinearContent = {
 //                            Text(
-//                                text = endText,
+//                                text = endText,y
 //                                color = MaterialTheme.colors.onBackground
-//                            )
+//                            )y
 //                        },
 //                        endCurvedContent = {
 //                            basicCurvedText(
@@ -318,6 +314,7 @@ fun WearApp(busStops: List<BusStop>) {
             TimeText(
                 timeTextStyle = TextStyle(
                     fontSize = 12.sp,
+                    color = MaterialTheme.colors.onSecondary,
                 ),
 
             )
@@ -334,7 +331,7 @@ fun WearApp(busStops: List<BusStop>) {
                 .background(MaterialTheme.colors.background)
                 .padding(bottom = 3.dp)
         ) { page ->
-            BusStopPage(busStops[page])
+            BusStopPage(busStops[page], pagerState)
         }
     }
 }
