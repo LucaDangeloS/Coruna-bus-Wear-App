@@ -56,8 +56,7 @@ import com.example.coruabuswear.data.models.BusStop
 import com.example.coruabuswear.data.providers.BusProvider
 import com.example.coruabuswear.data.providers.BusProvider.fetchBuses
 import com.example.coruabuswear.data.providers.BusProvider.fetchStops
-import com.example.coruabuswear.data.providers.BusProvider.mockBusApi
-import com.example.coruabuswear.data.providers.LocationProvider.fetchLocationContinuously
+import com.example.coruabuswear.data.providers.LocationProvider.startRegularLocationUpdates
 import com.example.coruabuswear.presentation.components.BusStopPage
 import com.example.coruabuswear.presentation.theme.wearColorPalette
 import com.google.android.gms.location.LocationCallback
@@ -75,10 +74,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setApplicationContext(this)
-//        clearAllSharedPreferences(this@MainActivity)
-        updateUILoadingLocation()
+        updateUILoading("Getting location...")
         locationListener = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
+                updateUILoading("Getting stops...")
                 // Handle location updates here
                 val _location = locationResult.lastLocation
                 if (_location != null) {
@@ -89,9 +88,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-//        lifecycleScope.launch(Dispatchers.IO) {
-        fetchLocationContinuously(this@MainActivity, locationListener)
-//        }
+        startRegularLocationUpdates(this@MainActivity, locationListener)
 
 //        val location = Flowable.fromCallable {
 //            fetchLocation(this@MainActivity)
@@ -199,12 +196,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun updateUILoadingLocation() {
+    private fun updateUILoading(loadingText: String? = null) {
         displayContent {
             val endText = ""
             Scaffold (
                 timeText = {
                     TimeText(
+                        modifier = Modifier.padding(2.dp),
                         // reduce font
                         timeTextStyle =
                             TextStyle(
@@ -243,11 +241,19 @@ class MainActivity : ComponentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally
 
                 ) {
-                    CircularProgressIndicator(
-                        indicatorColor = wearColorPalette.primary,
-                        trackColor = MaterialTheme.colors.onBackground.copy(alpha = 0.3f),
-                        strokeWidth = 4.dp
-                    )
+                    Box(modifier = Modifier.fillMaxSize().align(Alignment.CenterHorizontally)) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.fillMaxSize(),
+                            indicatorColor = wearColorPalette.primary,
+                            trackColor = MaterialTheme.colors.onBackground.copy(alpha = 0.3f),
+                            strokeWidth = 6.dp
+                        )
+                        Text(
+                            modifier = Modifier.align(Alignment.Center),
+                            text = loadingText ?: "",
+                            color = MaterialTheme.colors.onBackground,
+                        )
+                    }
                 }
             }
         }
