@@ -6,7 +6,6 @@
 
 package com.example.coruabuswear.presentation
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.os.Bundle
@@ -48,6 +47,7 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
+import com.example.coruabuswear.data.ApiConstants.BUS_API_FETCH_TIME
 import com.example.coruabuswear.data.ContextHolder.setApplicationContext
 import com.example.coruabuswear.data.local.clearAllSharedPreferences
 import com.example.coruabuswear.data.local.saveBusLine
@@ -64,64 +64,36 @@ import com.google.android.gms.location.LocationResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
     private var definitionsUpdated = false
-    private var locationUpdated = false
     private lateinit var locationListener: LocationCallback
-    private var busStops: List<BusStop> = mutableListOf()
+    private var executor = Executors.newSingleThreadScheduledExecutor()
+    private var busTaskScheduler: ScheduledFuture<*>? = null
+    var busStops: List<BusStop> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setApplicationContext(this)
-        updateUILoading("Getting location...")
+        updateUILoading("Obteniendo localización...")
+
         locationListener = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                updateUILoading("Getting stops...")
+                updateUILoading("Obteniendo paradas...")
                 // Handle location updates here
                 val _location = locationResult.lastLocation
                 if (_location != null) {
                     updateUIWithStops(_location)
                 } else {
                     Log.d("DEBUG_TAG", "Location is null")
-                    updateUINoLocation()
                 }
             }
         }
         startRegularLocationUpdates(this@MainActivity, locationListener)
-
-//        val location = Flowable.fromCallable {
-//            fetchLocation(this@MainActivity)
-//        }
-//        val locationBackground = location.subscribeOn(Schedulers.io())
-//        val locationObserver = locationBackground.observeOn(Schedulers.single())
-//
-//        val locationCancellation = locationObserver.subscribe(
-//            { x: Location ->
-//                updateUIWithLocation(x)
-//            }
-//        ) { obj: Throwable -> obj.printStackTrace(); updateUINoLocation() }
-
-        // Timeout for location, if it takes too long, show error
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            kotlinx.coroutines.delay(20000)
-//            withContext(Dispatchers.Main) {
-//                if (!definitionsUpdated && !locationUpdated) {
-//                    updateUINoLocation()
-//                    // Stop listening for location updates
-//                    Log.d("DEBUG_TAG", "Stopping location updates")
-//                    stopFetchingLocation(this@MainActivity, locationListener)
-//                } else if (definitionsUpdated) {
-//                    updateUIUpdatingDefinitions()
-//                }
-//            }
-//        }
-    }
-
-    private fun updateUIUpdatingDefinitions() {
-        displayContent {
-            WearApp("Updating definitions!")
-        }
     }
 
     private fun updateUIError() {
@@ -136,57 +108,68 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @SuppressLint("CheckResult")
-    private fun updateBusDefinitions(context: Context) {
-        Log.d("DEBUG_TAG", "Updating Bus definitions")
-        val (stops, lines) = BusProvider.fetchStopsLinesData()
-        clearAllSharedPreferences(context)
-        Log.d("DEBUG_TAG", "$stops \n $lines")
-        stops.forEach { busStop ->
-            saveBusStop(context, busStop.id.toString(), busStop)
+    private suspend fun <T> retryUpdateDefinitions(function: suspend () -> T, context: Context): T {
+        try {
+            return function()
+        } catch (e: Exception) {
+            if (definitionsUpdated) {
+                throw e
+            }
+            definitionsUpdated = true
+            updateUILoading("Actualizando índice...")
+            Log.d("DEBUG_TAG", "Updating Bus definitions")
+            val (stops, lines) = BusProvider.fetchStopsLinesData()
+            clearAllSharedPreferences(context)
+            Log.d("DEBUG_TAG", "$stops \n $lines")
+            stops.forEach { busStop ->
+                saveBusStop(context, busStop.id.toString(), busStop)
+            }
+            lines.forEach { busLine ->
+                saveBusLine(context, busLine.id.toString(), busLine)
+            }
+            Log.d("DEBUG_TAG", "Updated!")
         }
-        lines.forEach { busLine ->
-            saveBusLine(context, busLine.id.toString(), busLine)
-        }
-        Log.d("DEBUG_TAG", "Updated!")
+        return function()
+    }
+
+    private fun startRegularBusUpdates() {
+        Log.d("DEBUG_TAG", "Starting regular bus updates")
+        busTaskScheduler = executor.scheduleAtFixedRate({
+            updateUIWithBuses()
+        }, 0, BUS_API_FETCH_TIME, TimeUnit.MILLISECONDS)
     }
 
     private fun updateUIWithStops(location: Location) {
         Log.d("DEBUG_TAG", "Update UI method called")
+        // https://developer.android.com/topic/libraries/architecture/workmanager
+        busTaskScheduler?.cancel(true)
+
         lifecycleScope.launch(Dispatchers.IO) {
-            busStops = try {
+            try {
+            busStops = retryUpdateDefinitions ({
                 fetchStops(location.latitude, location.longitude, 300, 3)
+            }, this@MainActivity)
+//                withContext(Dispatchers.Main) {
+                    startRegularBusUpdates()
+//                }
             } catch (e: Exception) {
-                if (!definitionsUpdated) {
-                    definitionsUpdated = true
-                    updateBusDefinitions(this@MainActivity)
-                } else {
-                    withContext(Dispatchers.Main) {
-                        updateUIError()
-                    }
+                Log.d("ERROR_TAG", "Error fetching stops: $e")
+                withContext(Dispatchers.Main) {
+                    updateUIError()
                 }
-                fetchStops(location.latitude, location.longitude, 300, 3)
-            }
-            withContext(Dispatchers.Main) {
-                updateUIWithBuses()
             }
         }
     }
 
-    // Update the buses in the stops nearby with some Timeout (call every x seconds)
     private fun updateUIWithBuses() {
+        Log.d("DEBUG_TAG", "Update UI with buses method called")
         // call th API to get the buses in the stops
         lifecycleScope.launch(Dispatchers.IO) {
             for (stop in busStops) {
-                try {
+                retryUpdateDefinitions ({
                     stop.updateBuses(fetchBuses(stop.id))
+                }, this@MainActivity)
 //                    stop.updateBuses(mockBusApi(this@MainActivity))
-                } catch (e: Exception) {
-                    Log.d("EXCEPTION_TAG", "Exception: $e")
-                    updateBusDefinitions(this@MainActivity)
-                    stop.updateBuses(fetchBuses(stop.id))
-//                    stop.updateBuses(mockBusApi(this@MainActivity))
-                }
             }
             withContext(Dispatchers.Main) {
                 displayContent {

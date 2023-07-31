@@ -41,14 +41,14 @@ object LocationProvider {
     }
 
     @SuppressLint("MissingPermission")
-    fun fetchLocationContinuously(context: Context, locationListener: LocationCallback) {
+    fun startRegularLocationUpdates(context: Context, locationListener: LocationCallback) {
         fusedLocationClient = getFusedLocationProviderClient(context)
 
         if (!permissionCheck(context)) {
             throw Exception("Permission not granted")
         }
 
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 20000)
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 30000)
             .setMinUpdateDistanceMeters(30f)
 
         fusedLocationClient.requestLocationUpdates(
