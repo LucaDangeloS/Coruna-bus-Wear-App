@@ -6,9 +6,13 @@
 
 package com.example.coruabuswear.presentation
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.location.Location
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -36,7 +40,11 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.wear.ambient.AmbientModeSupport
+import androidx.wear.ambient.AmbientModeSupport.AmbientCallbackProvider
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.HorizontalPageIndicator
 import androidx.wear.compose.material.MaterialTheme
@@ -65,22 +73,38 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private var definitionsUpdated = false
     private lateinit var locationListener: LocationCallback
     private var executor = Executors.newSingleThreadScheduledExecutor()
     private var busTaskScheduler: ScheduledFuture<*>? = null
-    var busStops: List<BusStop> = mutableListOf()
+    private var busStops: List<BusStop> = mutableListOf()
+    private lateinit var ambientController: AmbientModeSupport.AmbientController
+
+    // Ambient functionality, that for some reason... doesn't work in my watch
+//    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback {
+//        val ambientCallback = object : AmbientModeSupport.AmbientCallback() {
+//            override fun onEnterAmbient(ambientDetails: Bundle?) {
+//                println("ENTER AMBIENT")
+//            }
+//
+//            override fun onExitAmbient() {
+//                println("EXIT AMBIENT")
+//            }
+//        }
+//        return ambientCallback
+//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setApplicationContext(this)
-        updateUILoading("Obteniendo localización...")
+        ambientController = AmbientModeSupport.attach(this)
+        ambientController.setAutoResumeEnabled(true)
 
+        updateUILoading("Obteniendo localización...")
         locationListener = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 updateUILoading("Obteniendo paradas...")
@@ -93,19 +117,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        startRegularLocationUpdates(this@MainActivity, locationListener)
-    }
-
-    private fun updateUIError() {
-        displayContent {
-            WearApp("ERROR!")
-        }
-    }
-
-    private fun updateUINoLocation() {
-        displayContent {
-            WearApp("No location")
-        }
+        startRegularLocationUpdates(locationListener)
     }
 
     private suspend fun <T> retryUpdateDefinitions(function: suspend () -> T, context: Context): T {
@@ -118,6 +130,7 @@ class MainActivity : ComponentActivity() {
             definitionsUpdated = true
             updateUILoading("Actualizando índice...")
             Log.d("DEBUG_TAG", "Updating Bus definitions")
+            Log.d("ERROR_TAG", e.toString())
             val (stops, lines) = BusProvider.fetchStopsLinesData()
             clearAllSharedPreferences(context)
             Log.d("DEBUG_TAG", "$stops \n $lines")
@@ -139,19 +152,29 @@ class MainActivity : ComponentActivity() {
         }, 0, BUS_API_FETCH_TIME, TimeUnit.MILLISECONDS)
     }
 
+    private fun updateUIError() {
+        displayContent {
+            WearApp("ERROR!")
+        }
+    }
+
+    // Later switch to changing to first tab
+    private fun updateUINoStops() {
+        displayContent {
+            WearApp("No hay paradas cercanas")
+        }
+    }
+
     private fun updateUIWithStops(location: Location) {
         Log.d("DEBUG_TAG", "Update UI method called")
-        // https://developer.android.com/topic/libraries/architecture/workmanager
         busTaskScheduler?.cancel(true)
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-            busStops = retryUpdateDefinitions ({
-                fetchStops(location.latitude, location.longitude, 300, 3)
-            }, this@MainActivity)
-//                withContext(Dispatchers.Main) {
-                    startRegularBusUpdates()
-//                }
+                busStops = retryUpdateDefinitions ({
+                    fetchStops(location.latitude, location.longitude, 300, 3)
+                }, this@MainActivity)
+                startRegularBusUpdates()
             } catch (e: Exception) {
                 Log.d("ERROR_TAG", "Error fetching stops: $e")
                 withContext(Dispatchers.Main) {
@@ -163,6 +186,9 @@ class MainActivity : ComponentActivity() {
 
     private fun updateUIWithBuses() {
         Log.d("DEBUG_TAG", "Update UI with buses method called")
+        if (busStops.isEmpty()) {
+            updateUINoStops()
+        }
         // call th API to get the buses in the stops
         lifecycleScope.launch(Dispatchers.IO) {
             for (stop in busStops) {

@@ -9,6 +9,7 @@ import android.location.LocationManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.coruabuswear.data.ContextHolder.getApplicationContext
 import com.example.coruabuswear.presentation.MainActivity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -21,7 +22,8 @@ object LocationProvider {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     @SuppressLint("MissingPermission")
-    fun fetchLocation(context: Context): Location? {
+    fun fetchLocation(): Location? {
+        val context = getApplicationContext()
         var location: Location? = null
         fusedLocationClient = getFusedLocationProviderClient(context)
 
@@ -41,7 +43,8 @@ object LocationProvider {
     }
 
     @SuppressLint("MissingPermission")
-    fun startRegularLocationUpdates(context: Context, locationListener: LocationCallback) {
+    fun startRegularLocationUpdates(locationListener: LocationCallback) {
+        val context = getApplicationContext()
         fusedLocationClient = getFusedLocationProviderClient(context)
 
         if (!permissionCheck(context)) {
@@ -58,7 +61,7 @@ object LocationProvider {
         )
     }
 
-    fun stopFetchingLocation(context: Context, locationListener: LocationCallback) {
+    fun stopFetchingLocation(locationListener: LocationCallback) {
         fusedLocationClient.removeLocationUpdates(locationListener)
     }
 
