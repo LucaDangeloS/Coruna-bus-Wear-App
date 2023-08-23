@@ -1,7 +1,6 @@
 package com.example.coruabuswear.data.providers
 
 import android.content.Context
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color as Colorx
 import com.example.coruabuswear.data.ApiConstants.BUS_API_ROOT
 import com.example.coruabuswear.data.ContextHolder.getApplicationContext
@@ -68,7 +67,7 @@ object BusProvider {
                 val id = stop.getInt("parada")
 
                 val storedStop = getBusStop<BusStop>(getApplicationContext(), id.toString())
-                ?: throw Exception("Bus stop $id does not exist in local storage")
+                ?: throw UnknownDataException("Bus stop $id does not exist in local storage")
 
                 val distance = stop.getInt("distancia")
                 storedStop.updateDistance(distance)
@@ -79,6 +78,7 @@ object BusProvider {
     }
 
     fun fetchBuses(stopId: Int): List<Bus> {
+        // https://developer.android.com/topic/libraries/architecture/workmanager
         val uri = BUS_API_ROOT +
             "&dato=${stopId}"+
             "&func=0"
@@ -92,7 +92,6 @@ object BusProvider {
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IOException("Unexpected code $response")
             val json = JSONObject(response.body!!.string())
-            // {"parada": 358} TODO
             val lineas: JSONArray
             try {
                 lineas = json.getJSONObject("buses").getJSONArray("lineas")
@@ -126,7 +125,9 @@ object BusProvider {
         busList.add(Bus(1, busLine1A!!, 5))
         busList.add(Bus(2, busLine11!!, 2))
         busList.add(Bus(3, busLine3A!!, 10))
+        busList.add(Bus(3, busLine3A, 30))
         busList.add(Bus(4, busLine3!!, -1))
+        busList.add(Bus(4, busLine3!!, 4))
         print("Mocking bus api took ${endTime.second - initialTime.second} seconds")
         return busList
     }
@@ -167,9 +168,12 @@ object BusProvider {
     private fun parseBusFromJson(busObj: JSONObject): Bus {
         val lineaId: Int = busObj.getInt("linea")
         val busLine = getBusLine<BusLine>(getApplicationContext(), lineaId.toString())
-            ?: throw Exception("Bus line $lineaId does not exist in local storage")
+            ?: throw UnknownDataException("Bus line $lineaId does not exist in local storage")
         val remainingTime = try {busObj.getInt("tiempo")} catch (e: Exception) {-1}
         return Bus(busObj.getInt("bus"), busLine, remainingTime)
     }
+
+    // Custom exception
+    class UnknownDataException(message: String) : Exception(message)
 }
 
