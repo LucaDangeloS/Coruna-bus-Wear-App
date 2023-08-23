@@ -65,8 +65,9 @@ fun BusStopPage(stop: BusStop, pagerState: PagerState) {
             contentAlignment = Alignment.TopCenter
         ) {
             BusListHeader(stop, scrollState, pagerState)
-            //Last updated Text (some timer from when this function is called?)
-
+            //Last updated Text (some timer from when this function is called?) (Add in the pull refresh)
+            //https://developer.android.com/reference/kotlin/androidx/compose/material/pullrefresh/package-summary
+            // Add alternative implementation for square watches?
             ScalingLazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -75,9 +76,24 @@ fun BusStopPage(stop: BusStop, pagerState: PagerState) {
                 verticalArrangement = Arrangement.spacedBy(2.dp),
                 anchorType = ScalingLazyListAnchorType.ItemStart,
             ) {
-                for (bus in stop.buses) {
+                if (stop.buses.isEmpty()) {
                     item {
-                        BusListElement(bus)
+                        Text(
+                            text = "No hay buses :(",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp, horizontal = 14.dp),
+                            color = MaterialTheme.colors.onSecondary,
+                            textAlign = TextAlign.Center,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                } else {
+                    for (bus in stop.buses) {
+                        item {
+                            BusListElement(bus)
+                        }
                     }
                 }
             }
