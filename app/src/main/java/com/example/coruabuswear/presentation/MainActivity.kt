@@ -6,15 +6,10 @@
 
 package com.example.coruabuswear.presentation
 
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.location.Location
 import android.os.Bundle
-import android.provider.Settings
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -42,9 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.wear.ambient.AmbientModeSupport
-import androidx.wear.ambient.AmbientModeSupport.AmbientCallbackProvider
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.HorizontalPageIndicator
 import androidx.wear.compose.material.MaterialTheme
@@ -64,6 +57,7 @@ import com.example.coruabuswear.data.models.BusStop
 import com.example.coruabuswear.data.providers.BusProvider
 import com.example.coruabuswear.data.providers.BusProvider.fetchBuses
 import com.example.coruabuswear.data.providers.BusProvider.fetchStops
+import com.example.coruabuswear.data.providers.BusProvider.mockBusApi
 import com.example.coruabuswear.data.providers.LocationProvider.startRegularLocationUpdates
 import com.example.coruabuswear.presentation.components.BusStopPage
 import com.example.coruabuswear.presentation.theme.wearColorPalette
@@ -72,6 +66,7 @@ import com.google.android.gms.location.LocationResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -123,7 +118,7 @@ class MainActivity : FragmentActivity() {
     private suspend fun <T> retryUpdateDefinitions(function: suspend () -> T, context: Context): T {
         try {
             return function()
-        } catch (e: Exception) {
+        } catch (e: BusProvider.UnknownDataException) {
             if (definitionsUpdated) {
                 throw e
             }
@@ -152,9 +147,9 @@ class MainActivity : FragmentActivity() {
         }, 0, BUS_API_FETCH_TIME, TimeUnit.MILLISECONDS)
     }
 
-    private fun updateUIError() {
+    private fun updateUIErrorAPI() {
         displayContent {
-            WearApp("ERROR!")
+            WearApp("Error al obtener buses")
         }
     }
 
@@ -175,10 +170,10 @@ class MainActivity : FragmentActivity() {
                     fetchStops(location.latitude, location.longitude, 300, 3)
                 }, this@MainActivity)
                 startRegularBusUpdates()
-            } catch (e: Exception) {
+            } catch (e: IOException) {
                 Log.d("ERROR_TAG", "Error fetching stops: $e")
                 withContext(Dispatchers.Main) {
-                    updateUIError()
+                    updateUIErrorAPI()
                 }
             }
         }
@@ -189,19 +184,24 @@ class MainActivity : FragmentActivity() {
         if (busStops.isEmpty()) {
             updateUINoStops()
         }
-        // call th API to get the buses in the stops
-        lifecycleScope.launch(Dispatchers.IO) {
-            for (stop in busStops) {
-                retryUpdateDefinitions ({
-                    stop.updateBuses(fetchBuses(stop.id))
-                }, this@MainActivity)
+        try {
+            // call the API to get the buses in the stops
+            lifecycleScope.launch(Dispatchers.IO) {
+                for (stop in busStops) {
+                    retryUpdateDefinitions ({
+                        stop.updateBuses(fetchBuses(stop.id))
+                    }, this@MainActivity)
 //                    stop.updateBuses(mockBusApi(this@MainActivity))
-            }
-            withContext(Dispatchers.Main) {
-                displayContent {
-                    WearApp(busStops)
+                }
+                withContext(Dispatchers.Main) {
+                    displayContent {
+                        WearApp(busStops)
+                    }
                 }
             }
+        } catch (e: IOException) {
+            Log.d("ERROR_TAG", "Error fetching buses: $e")
+            updateUIErrorAPI()
         }
     }
 
