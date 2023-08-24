@@ -1,8 +1,10 @@
 package com.example.coruabuswear.presentation.components
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,24 +35,30 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.ScalingLazyListAnchorType
 import androidx.wear.compose.material.ScalingLazyListState
 import androidx.wear.compose.material.rememberScalingLazyListState
+import com.example.coruabuswear.data.ContextHolder
+import com.example.coruabuswear.presentation.MainActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.lang.Float.min
-import java.lang.Integer.max
 import kotlin.math.absoluteValue
+import kotlin.math.max
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BusStopPage(stop: BusStop, pagerState: PagerState) {
     val columnPadding = PaddingValues(
-        top = 0.dp,
+        top = 6.dp,
         bottom = 0.dp,
-        start = 0.dp,
-        end = 0.dp
+        start = 10.dp,
+        end = 10.dp
     )
-    val scrollState = rememberScalingLazyListState()
+    val scrollState: ScalingLazyListState = rememberScalingLazyListState()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -70,11 +78,12 @@ fun BusStopPage(stop: BusStop, pagerState: PagerState) {
             // Add alternative implementation for square watches?
             ScalingLazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(columnPadding),
+                    .fillMaxSize(),
+//                    .padding(columnPadding),
                 state = scrollState,
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
                 anchorType = ScalingLazyListAnchorType.ItemStart,
+                contentPadding = columnPadding,
             ) {
                 if (stop.buses.isEmpty()) {
                     item {
@@ -107,18 +116,18 @@ fun BusListHeader(stop: BusStop, scrollState: ScalingLazyListState, pagerState: 
     val redRectHeight = 62.dp
     val stopNameRectHeight = 38.dp
     val stopNameRectWidth = 0.58f
-
     val scrollItemSize = 32f
-    val scrollFractionIndex = ((max(scrollState.centerItemIndex, 1)) +
+    val scrollFractionIndex = ((max(scrollState.centerItemIndex, 0)) +
             ((scrollState.centerItemScrollOffset + scrollItemSize) / (scrollItemSize * 2f)) - 0.5f)
 
     val scrollFadingIndex = 2f
+//    println("${scrollState.centerItemIndex} ${scrollState.centerItemScrollOffset}")
     val headerAlpha by animateFloatAsState(
         targetValue = (scrollFadingIndex - (scrollFractionIndex)).coerceIn(0f, 0.999f),
 //            1 - (pagerState.currentPageOffsetFraction * 2).absoluteValue)
     )
     val headerOffset by animateDpAsState(
-        targetValue = (((scrollFractionIndex - 1) * scrollItemSize)).dp
+        targetValue = (max(((scrollFractionIndex - 1) * scrollItemSize), 0f)).dp, label = "HeaderOffset"
     )
 
     Box(
