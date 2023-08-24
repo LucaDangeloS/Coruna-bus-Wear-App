@@ -147,9 +147,9 @@ class MainActivity : FragmentActivity() {
         }, 0, BUS_API_FETCH_TIME, TimeUnit.MILLISECONDS)
     }
 
-    private fun updateUIErrorAPI() {
+    private fun updateUIErrorAPI(text: String) {
         displayContent {
-            WearApp("Error al obtener buses")
+            WearApp(text)
         }
     }
 
@@ -170,10 +170,15 @@ class MainActivity : FragmentActivity() {
                     fetchStops(location.latitude, location.longitude, 300, 3)
                 }, this@MainActivity)
                 startRegularBusUpdates()
+            } catch (e: BusProvider.TooManyRequestsException) {
+                Log.d("ERROR_TAG", "Too many requests: $e")
+                withContext(Dispatchers.Main) {
+                    updateUIErrorAPI("Demasiadas peticiones, espera un poco")
+                }
             } catch (e: IOException) {
                 Log.d("ERROR_TAG", "Error fetching stops: $e")
                 withContext(Dispatchers.Main) {
-                    updateUIErrorAPI()
+                    updateUIErrorAPI("Error al obtener paradas")
                 }
             }
         }
@@ -188,10 +193,10 @@ class MainActivity : FragmentActivity() {
             // call the API to get the buses in the stops
             lifecycleScope.launch(Dispatchers.IO) {
                 for (stop in busStops) {
-                    retryUpdateDefinitions ({
-                        stop.updateBuses(fetchBuses(stop.id))
-                    }, this@MainActivity)
-//                    stop.updateBuses(mockBusApi(this@MainActivity))
+//                    retryUpdateDefinitions ({
+//                        stop.updateBuses(fetchBuses(stop.id))
+//                    }, this@MainActivity)
+                    stop.updateBuses(mockBusApi(this@MainActivity))
                 }
                 withContext(Dispatchers.Main) {
                     displayContent {
@@ -201,7 +206,7 @@ class MainActivity : FragmentActivity() {
             }
         } catch (e: IOException) {
             Log.d("ERROR_TAG", "Error fetching buses: $e")
-            updateUIErrorAPI()
+            updateUIErrorAPI("Error al obtener buses")
         }
     }
 
@@ -258,7 +263,8 @@ class MainActivity : FragmentActivity() {
                             strokeWidth = 6.dp
                         )
                         Text(
-                            modifier = Modifier.align(Alignment.Center),
+                            modifier = Modifier.align(Alignment.Center)
+                                .padding(2.dp),
                             text = loadingText ?: "",
                             color = MaterialTheme.colors.onBackground,
                         )
@@ -302,6 +308,7 @@ fun WearApp(text: String) {
 fun WearApp(busStops: List<BusStop>) {
     val currentPageIndex by remember { mutableStateOf(0) }
     val maxPages = busStops.size
+    //    https://www.youtube.com/watch?v=2CzWz5Ad4iM <- Rotary input TODO
     val pagerState = rememberPagerState(initialPage = currentPageIndex)
     val pageIndicatorState: PageIndicatorState = remember {
         object : PageIndicatorState {

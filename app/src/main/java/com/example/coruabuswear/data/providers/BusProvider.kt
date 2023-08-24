@@ -59,7 +59,13 @@ object BusProvider {
         val busStops = mutableListOf<BusStop>()
 
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("Unexpected code $response")
+            if (!response.isSuccessful) {
+                if (response.code == 429) {
+                    throw TooManyRequestsException("Unexpected code $response")
+                } else {
+                    throw IOException("Unexpected code $response")
+                }
+            }
             val json = JSONObject(response.body!!.string())
             val stops = json.getJSONArray("posgps")
             for (i in 0 until stops.length()) {
@@ -173,7 +179,8 @@ object BusProvider {
         return Bus(busObj.getInt("bus"), busLine, remainingTime)
     }
 
-    // Custom exception
+    // Custom exceptions
     class UnknownDataException(message: String) : Exception(message)
+    class TooManyRequestsException(message: String) : Exception(message)
 }
 
