@@ -193,10 +193,10 @@ class MainActivity : FragmentActivity() {
             // call the API to get the buses in the stops
             lifecycleScope.launch(Dispatchers.IO) {
                 for (stop in busStops) {
-//                    retryUpdateDefinitions ({
-//                        stop.updateBuses(fetchBuses(stop.id))
-//                    }, this@MainActivity)
-                    stop.updateBuses(mockBusApi(this@MainActivity))
+                    retryUpdateDefinitions ({
+                        stop.updateBuses(fetchBuses(stop.id))
+                    }, this@MainActivity)
+//                    stop.updateBuses(mockBusApi(this@MainActivity))
                 }
                 withContext(Dispatchers.Main) {
                     displayContent {
