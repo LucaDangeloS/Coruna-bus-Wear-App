@@ -188,6 +188,7 @@ class MainActivity : FragmentActivity() {
         Log.d("DEBUG_TAG", "Update UI with buses method called")
         if (busStops.isEmpty()) {
             updateUINoStops()
+            return
         }
         try {
             // call the API to get the buses in the stops
