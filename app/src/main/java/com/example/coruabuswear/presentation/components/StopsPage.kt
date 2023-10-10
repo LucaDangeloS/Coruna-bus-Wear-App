@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +41,11 @@ import androidx.wear.compose.material.rememberScalingLazyListState
 import com.example.coruabuswear.data.ContextHolder
 import com.example.coruabuswear.data.models.BusLine
 import com.example.coruabuswear.data.models.BusStop
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import okhttp3.internal.wait
 
 // receives a list of stops
 @OptIn(ExperimentalFoundationApi::class)
@@ -51,6 +58,7 @@ fun StopsPage(stops: List<BusStop>, pagerState: PagerState) {
         end = 10.dp
     )
     val scrollState: ScalingLazyListState = rememberScalingLazyListState()
+    val animationScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -67,7 +75,6 @@ fun StopsPage(stops: List<BusStop>, pagerState: PagerState) {
             ScalingLazyColumn(
                 modifier = Modifier
                     .fillMaxSize(),
-//                    .padding(columnPadding),
                 state = scrollState,
                 verticalArrangement = Arrangement.spacedBy(3.dp),
                 anchorType = ScalingLazyListAnchorType.ItemStart,
@@ -75,7 +82,7 @@ fun StopsPage(stops: List<BusStop>, pagerState: PagerState) {
             ) {
                 for ((index, stop) in stops.withIndex()) {
                     item {
-                        StopListElement(stop, index, pagerState)
+                        StopListElement(stop, index + 1, pagerState, animationScope)
                     }
                 }
             }
@@ -85,14 +92,14 @@ fun StopsPage(stops: List<BusStop>, pagerState: PagerState) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StopListElement(stop: BusStop, index: Int, pagerState: PagerState) {
+fun StopListElement(stop: BusStop, index: Int, pagerState: PagerState, animationScope: CoroutineScope) {
     val lines = stop.buses.map { it.line }.distinct()
 
     Card (
         onClick =  {
-            // TODO: somehow launch coroutine to scroll to page
-             {
-//                pagerState.animateScrollToPage(index)
+            animationScope.launch {
+                // TODO: Change it to scrollToPage as it doesn't work well with the animation...
+                pagerState.animateScrollToPage(index)
             }
         },
         modifier = Modifier
@@ -101,14 +108,15 @@ fun StopListElement(stop: BusStop, index: Int, pagerState: PagerState) {
         // TODO: change background to better gradient
         backgroundPainter = CardDefaults.cardBackgroundPainter(
             startBackgroundColor = MaterialTheme.colors.primary,
-            endBackgroundColor = MaterialTheme.colors.secondary,
+            endBackgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.6f),
             gradientDirection = LayoutDirection.Ltr,
         ),
     ) {
         Column {
             AutoResizingText(
                 modifier = Modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(vertical = 1.dp),
                 text = stop.name,
                 color = MaterialTheme.colors.onSecondary,
                 targetTextSize = 17.sp,
@@ -116,7 +124,7 @@ fun StopListElement(stop: BusStop, index: Int, pagerState: PagerState) {
                 maxLines = 1,
                 fontWeight = FontWeight.W500
             )
-            // add little icon for testing
+            // add little icons
             BusStopsIconRow(stop, lines)
         }
     }
@@ -127,25 +135,23 @@ fun BusStopsIconRow(busStop: BusStop, lines: List<BusLine>) {
     // For each line that stops at this stop, add a little icon that is a rectangle with the color of the line, with the line number inside in white
     // Stack them horizontally
 
-    // Grab unique line colors
     val diameter = 12.dp
 
-    // Stack them horizontally
-
+    // Stack icons horizontally
     Row (
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 5.dp),
         horizontalArrangement = Arrangement.Start,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(0.85f),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
+            horizontalArrangement = Arrangement.spacedBy(1.5.dp),
         ) {
             for (line in lines) {
                 Box(
                     modifier = Modifier
                         .height(diameter)
                         .width(diameter)
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(diameter/2))
                         .background(
                             color = line.color,
                         )
