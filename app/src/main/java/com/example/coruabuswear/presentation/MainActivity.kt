@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.ambient.AmbientModeSupport
@@ -61,6 +62,7 @@ import com.example.coruabuswear.data.providers.BusProvider.fetchBuses
 import com.example.coruabuswear.data.providers.BusProvider.fetchStops
 import com.example.coruabuswear.data.providers.BusProvider.mockBusApi
 import com.example.coruabuswear.data.providers.LocationProvider.startRegularLocationUpdates
+import com.example.coruabuswear.data.providers.PermissionNotGrantedException
 import com.example.coruabuswear.presentation.components.BusStopPage
 import com.example.coruabuswear.presentation.components.StopsPage
 import com.example.coruabuswear.presentation.theme.wearColorPalette
@@ -115,7 +117,28 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
-        startRegularLocationUpdates(locationListener)
+        startRegularLocationUpdates(locationListener, this@MainActivity)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (grantResults.isEmpty()) {
+            Log.d("DEBUG_TAG", "Request cancelled")
+            updateUIErrorAPI("Permiso de localización no concedido")
+            return
+        } else {
+            for (result in grantResults) {
+                if (result != PERMISSION_GRANTED) {
+                    Log.d("DEBUG_TAG", "Permission not granted")
+                    updateUIErrorAPI("Permiso de localización no concedido")
+                    return
+                }
+            }
+        }
     }
 
     private suspend fun <T> retryUpdateDefinitions(function: suspend () -> T, context: Context): T {
@@ -201,10 +224,10 @@ class MainActivity : FragmentActivity() {
             // call the API to get the buses in the stops
             lifecycleScope.launch(Dispatchers.IO) {
                 for (stop in busStops) {
-                    retryUpdateDefinitions ({
-                        stop.updateBuses(fetchBuses(stop.id))
-                    }, this@MainActivity)
-//                    stop.updateBuses(mockBusApi(this@MainActivity))
+//                    retryUpdateDefinitions ({
+//                        stop.updateBuses(fetchBuses(stop.id))
+//                    }, this@MainActivity)
+                    stop.updateBuses(mockBusApi(this@MainActivity))
                 }
                 withContext(Dispatchers.Main) {
                     displayContent {
@@ -263,7 +286,8 @@ class MainActivity : FragmentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally
 
                 ) {
-                    Box(modifier = Modifier
+                    Box(
+                        modifier = Modifier
                         .fillMaxSize()
                         .align(Alignment.CenterHorizontally)) {
                         CircularProgressIndicator(
@@ -275,7 +299,7 @@ class MainActivity : FragmentActivity() {
                         Text(
                             modifier = Modifier
                                 .align(Alignment.Center)
-                                .padding(2.dp),
+                                .padding(4.dp),
                             text = loadingText ?: "",
                             color = MaterialTheme.colors.onBackground,
                         )
@@ -305,7 +329,8 @@ fun WearApp(text: String) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState),
+                .verticalScroll(scrollState)
+                .padding(8.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

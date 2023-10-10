@@ -2,6 +2,7 @@ package com.example.coruabuswear.data.providers
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -10,25 +11,27 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.coruabuswear.data.ContextHolder.getApplicationContext
-import com.example.coruabuswear.presentation.MainActivity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices.getFusedLocationProviderClient
 import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks.await
+import kotlinx.coroutines.CoroutineScope
 
 object LocationProvider {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     @SuppressLint("MissingPermission")
-    fun fetchLocation(): Location? {
+    suspend fun fetchLocation(activity: Activity): Location? {
         val context = getApplicationContext()
         var location: Location? = null
         fusedLocationClient = getFusedLocationProviderClient(context)
 
-        if (!permissionCheck(context)) {
-            throw Exception("Permission not granted")
+        if (!permissionCheck(context, activity)) {
+            Log.d("DEBUG_TAG", "Permission not granted")
+//            throw PermissionNotGrantedException("Permission not granted")
         }
 
         // TODO: Add timeout
@@ -43,12 +46,14 @@ object LocationProvider {
     }
 
     @SuppressLint("MissingPermission")
-    fun startRegularLocationUpdates(locationListener: LocationCallback) {
+    fun startRegularLocationUpdates(locationListener: LocationCallback, activity: Activity) {
         val context = getApplicationContext()
         fusedLocationClient = getFusedLocationProviderClient(context)
 
-        if (!permissionCheck(context)) {
-            throw Exception("Permission not granted")
+        if (!permissionCheck(context, activity)) {
+            // Raise permission exception
+            Log.d("DEBUG_TAG", "Permission not granted")
+//            throw PermissionNotGrantedException("Permission not granted")
         }
 
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 30000)
@@ -65,7 +70,8 @@ object LocationProvider {
         fusedLocationClient.removeLocationUpdates(locationListener)
     }
 
-    private fun permissionCheck(context: Context): Boolean {
+
+    private fun permissionCheck(context: Context, activity: Activity): Boolean {
         if (ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_COARSE_LOCATION
@@ -74,14 +80,13 @@ object LocationProvider {
             Log.d("DEBUG_TAG", "No permission")
             // request both coarse and fine location permissions
             ActivityCompat.requestPermissions(
-                context as MainActivity,
+                activity,
                 arrayOf(
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION
                 ),
                 10
             )
-            permissionCheck(context)
         } else {
             // Check if location is enabled
             val locationManager =
@@ -94,4 +99,7 @@ object LocationProvider {
         return true
     }
 }
+
+// Custom exception for permission
+class PermissionNotGrantedException(message: String) : Exception(message)
 
