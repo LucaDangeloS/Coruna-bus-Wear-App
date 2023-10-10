@@ -51,8 +51,10 @@ import androidx.wear.compose.material.VignettePosition
 import com.example.coruabuswear.data.ApiConstants.BUS_API_FETCH_TIME
 import com.example.coruabuswear.data.ContextHolder.setApplicationContext
 import com.example.coruabuswear.data.local.clearAllSharedPreferences
+import com.example.coruabuswear.data.local.saveBusConnection
 import com.example.coruabuswear.data.local.saveBusLine
 import com.example.coruabuswear.data.local.saveBusStop
+import com.example.coruabuswear.data.local.saveLog
 import com.example.coruabuswear.data.models.BusStop
 import com.example.coruabuswear.data.providers.BusProvider
 import com.example.coruabuswear.data.providers.BusProvider.fetchBuses
@@ -60,6 +62,7 @@ import com.example.coruabuswear.data.providers.BusProvider.fetchStops
 import com.example.coruabuswear.data.providers.BusProvider.mockBusApi
 import com.example.coruabuswear.data.providers.LocationProvider.startRegularLocationUpdates
 import com.example.coruabuswear.presentation.components.BusStopPage
+import com.example.coruabuswear.presentation.components.StopsPage
 import com.example.coruabuswear.presentation.theme.wearColorPalette
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
@@ -120,20 +123,24 @@ class MainActivity : FragmentActivity() {
             return function()
         } catch (e: BusProvider.UnknownDataException) {
             if (definitionsUpdated) {
+                // Store in a log file
+                saveLog(context, e.toString())
+                Log.d("ERROR_TAG", e.toString())
                 throw e
             }
             definitionsUpdated = true
             updateUILoading("Actualizando índice...")
             Log.d("DEBUG_TAG", "Updating Bus definitions")
-            Log.d("ERROR_TAG", e.toString())
-            val (stops, lines) = BusProvider.fetchStopsLinesData()
+            val (stops, lines, connections) = BusProvider.fetchStopsLinesData()
             clearAllSharedPreferences(context)
-            Log.d("DEBUG_TAG", "$stops \n $lines")
             stops.forEach { busStop ->
                 saveBusStop(context, busStop.id.toString(), busStop)
             }
             lines.forEach { busLine ->
                 saveBusLine(context, busLine.id.toString(), busLine)
+            }
+            connections.forEach { busLine ->
+                saveBusConnection(context, busLine.id.toString(), busLine)
             }
             Log.d("DEBUG_TAG", "Updated!")
         }
@@ -256,7 +263,9 @@ class MainActivity : FragmentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally
 
                 ) {
-                    Box(modifier = Modifier.fillMaxSize().align(Alignment.CenterHorizontally)) {
+                    Box(modifier = Modifier
+                        .fillMaxSize()
+                        .align(Alignment.CenterHorizontally)) {
                         CircularProgressIndicator(
                             modifier = Modifier.fillMaxSize(),
                             indicatorColor = wearColorPalette.primary,
@@ -264,7 +273,8 @@ class MainActivity : FragmentActivity() {
                             strokeWidth = 6.dp
                         )
                         Text(
-                            modifier = Modifier.align(Alignment.Center)
+                            modifier = Modifier
+                                .align(Alignment.Center)
                                 .padding(2.dp),
                             text = loadingText ?: "",
                             color = MaterialTheme.colors.onBackground,
@@ -308,7 +318,7 @@ fun WearApp(text: String) {
 @Composable
 fun WearApp(busStops: List<BusStop>) {
     val currentPageIndex by remember { mutableStateOf(0) }
-    val maxPages = busStops.size
+    val maxPages = busStops.size + 1
     //    https://www.youtube.com/watch?v=2CzWz5Ad4iM <- Rotary input TODO
     val pagerState = rememberPagerState(initialPage = currentPageIndex)
     val pageIndicatorState: PageIndicatorState = remember {
@@ -345,7 +355,7 @@ fun WearApp(busStops: List<BusStop>) {
         vignette = {
             Vignette(vignettePosition = VignettePosition.TopAndBottom)
         }
-            ) {
+    ) {
         HorizontalPager(
             maxPages,
             state = pagerState,
@@ -354,7 +364,11 @@ fun WearApp(busStops: List<BusStop>) {
                 .background(MaterialTheme.colors.background)
                 .padding(bottom = 3.dp)
         ) { page ->
-            BusStopPage(busStops[page], pagerState)
+            if (page == 0) {
+                StopsPage(busStops, pagerState)
+            } else {
+                BusStopPage(busStops[page - 1], pagerState)
+            }
         }
     }
 }

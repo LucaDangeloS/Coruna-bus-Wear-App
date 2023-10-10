@@ -1,9 +1,11 @@
 package com.example.coruabuswear.data.providers
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.graphics.Color as Colorx
 import com.example.coruabuswear.data.ApiConstants.BUS_API_ROOT
 import com.example.coruabuswear.data.ContextHolder.getApplicationContext
+import com.example.coruabuswear.data.local.getBusConnection
 import com.example.coruabuswear.data.local.getBusLine
 import com.example.coruabuswear.data.local.getBusStop
 import com.example.coruabuswear.data.models.Bus
@@ -20,12 +22,12 @@ import java.time.format.DateTimeFormatter
 private val client = OkHttpClient()
 
 object BusProvider {
-    fun fetchStopsLinesData(): Pair<List<BusStop>, List<BusLine>> {
+    fun fetchStopsLinesData(): Triple<List<BusStop>, List<BusLine>, List<BusLine>> {
         // For some reason the API is called with the 2016 year date, probably because it was made that year
-        val currDate = LocalDateTime.of(2016, 1, 1, 0, 0, 0, 0)
+        val fetchDate = LocalDateTime.of(2016, 1, 1, 0, 0, 0, 0)
         val formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")
         val uri = BUS_API_ROOT +
-                "&dato=${currDate.format(formatter)}_gl_3_${currDate.format(formatter)}" +
+                "&dato=${fetchDate.format(formatter)}_gl_3_${fetchDate.format(formatter)}" +
                 "&func=7"
 
         val request = Request.Builder()
@@ -34,15 +36,20 @@ object BusProvider {
 
         var busStops = emptyList<BusStop>()
         var busLines = emptyList<BusLine>()
+        var busConnections = emptyList<BusLine>()
 
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IOException("Unexpected code $response")
             val json = JSONObject(response.body!!.string()).getJSONObject("iTranvias").getJSONObject("actualizacion")
-            busStops = parseBusStopsFromJsonArray(json.getJSONArray("paradas"))
             busLines = parseBusLinesFromJsonArray(json.getJSONArray("lineas"))
+            busStops = parseBusStopsFromJsonArray(json.getJSONArray("paradas"))
+            // bus connections will be added to an exception list
+            busConnections = parseConnectionsFromJsonArray(json.getJSONObject("enlaces").getJSONArray("origen"))
+            // Remove from busConnections entries that are in busLines
+            busConnections = busConnections.filter { busLine -> !busLines.any { it.id == busLine.id } }
         }
 
-        return Pair(busStops, busLines)
+        return Triple(busStops, busLines, busConnections)
     }
 
     fun fetchStops(latitude: Double, longitude: Double, radius: Int, limit: Int): List<BusStop> {
@@ -96,7 +103,12 @@ object BusProvider {
         val busList = mutableListOf<Bus>()
 
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IOException("Unexpected code $response")
+            if (!response.isSuccessful) {
+                if (response.code == 429) {
+                    throw TooManyRequestsException("Unexpected code $response")
+                }
+                throw IOException("Unexpected code $response")
+            }
             val json = JSONObject(response.body!!.string())
             val lineas: JSONArray
             try {
@@ -109,7 +121,14 @@ object BusProvider {
 
                 val buses = linea.getJSONArray("buses")
                 for (j in 0 until buses.length()) {
-                    busList += parseBusFromJson(buses.getJSONObject(j).accumulate("linea", linea.getInt("linea")))
+                    try {
+                        busList += parseBusFromJson(
+                            buses.getJSONObject(j).accumulate("linea", linea.getInt("linea"))
+                        )
+                    } catch (e: BusLineIsConnection) {
+                        // do nothing
+                        Log.d("DEBUG_TAG", "Bus line is a connection")
+                    }
                 }
             }
         }
@@ -117,6 +136,7 @@ object BusProvider {
         busList.sortBy { it.remainingTime }
         return busList
     }
+
     fun mockBusApi(context: Context): List<Bus> {
         val initialTime = LocalDateTime.now()
         println("Mocking bus api")
@@ -138,6 +158,7 @@ object BusProvider {
         return busList
     }
 
+    // BusLine
     private fun parseBusLineFromJson(json: JSONObject): BusLine {
         val id = json.getInt("id")
         val name = json.getString("lin_comer")
@@ -155,6 +176,7 @@ object BusProvider {
         return busLines
     }
 
+    // BusStop
     private fun parseBusStopFromJson(json: JSONObject): BusStop {
         val id = json.getInt("id")
         val name = json.getString("nombre")
@@ -171,16 +193,54 @@ object BusProvider {
         return busStops
     }
 
+    // Bus
     private fun parseBusFromJson(busObj: JSONObject): Bus {
         val lineaId: Int = busObj.getInt("linea")
         val busLine = getBusLine<BusLine>(getApplicationContext(), lineaId.toString())
-            ?: throw UnknownDataException("Bus line $lineaId does not exist in local storage")
+        if (busLine == null) {
+            if (getBusConnection<BusLine>(getApplicationContext(), lineaId.toString()) != null) {
+                throw BusLineIsConnection("Bus line $lineaId is a connection")
+            }
+            throw UnknownDataException("Bus line $lineaId does not exist in local storage")
+        }
         val remainingTime = try {busObj.getInt("tiempo")} catch (e: Exception) {-1}
         return Bus(busObj.getInt("bus"), busLine, remainingTime)
+    }
+
+    // Connections
+    private fun parseConnectionFromJson(json: JSONObject): List<BusLine> {
+        val placeholderColor = Colorx(android.graphics.Color.parseColor("#000000"))
+        val busLines = mutableListOf<BusLine>()
+        val sentidos = json.getJSONArray("sentidos")
+
+        for (i in 0 until sentidos.length()) {
+            val sentido = sentidos.getJSONObject(i)
+            val destinos = sentido.getJSONArray("destinos")
+
+            for (j in 0 until destinos.length()) {
+                val lineaObj = destinos.getJSONObject(j)
+                val linea = lineaObj.getInt("linea")
+
+                busLines.add(BusLine(linea, linea.toString(), placeholderColor))
+            }
+        }
+        return busLines
+    }
+    private fun parseConnectionsFromJsonArray(jsonArray: JSONArray): List<BusLine> {
+        val busLines = mutableListOf<BusLine>()
+        for (i in 0 until jsonArray.length()) {
+            val json = jsonArray.getJSONObject(i)
+            val busLine = parseConnectionFromJson(json)
+            busLines.addAll(busLine)
+        }
+
+        // Remove duplicates
+        return busLines.distinctBy { it.id }
     }
 
     // Custom exceptions
     class UnknownDataException(message: String) : Exception(message)
     class TooManyRequestsException(message: String) : Exception(message)
+    class BusLineIsConnection(message: String) : Exception(message)
 }
 

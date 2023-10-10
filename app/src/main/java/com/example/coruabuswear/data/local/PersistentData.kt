@@ -1,5 +1,6 @@
 package com.example.coruabuswear.data.local
 import android.content.Context
+import com.example.coruabuswear.data.AppConstants.LOG_FILE
 import com.google.gson.Gson
 
 fun <BusStop> saveBusStop(context: Context, key: String, obj: BusStop) {
@@ -16,6 +17,14 @@ fun <BusLine> saveBusLine(context: Context, key: String, obj: BusLine) {
 
 inline fun <reified BusLine> getBusLine(context: Context, key: String): BusLine? {
     return getObject<BusLine>("BusLine", context, key)
+}
+
+fun <BusLine> saveBusConnection(context: Context, key: String, obj: BusLine) {
+    return saveObject("BusConnection", context, key, obj)
+}
+
+inline fun <reified BusLine> getBusConnection(context: Context, key: String): BusLine? {
+    return getObject<BusLine>("BusConnection", context, key)
 }
 
 // Functions to save and retrieve a custom object from SharedPreferences
@@ -44,3 +53,14 @@ fun clearAllSharedPreferences(context: Context) {
     editor.apply()
 }
 
+// Functions to store logs, appending to the previous log with date and time
+fun saveLog(context: Context, log: String) {
+//    val sharedPreferences = context.getSharedPreferences("Logs", Context.MODE_PRIVATE)
+//    val editor = sharedPreferences.edit()
+//    // put date and time in the log
+//    editor.putString(java.time.LocalDateTime.now().toString(), "$log")
+//    editor.apply()
+    context.openFileOutput(LOG_FILE + java.time.LocalDateTime.now().toString() + ".log", Context.MODE_PRIVATE).use {
+        it.write(log.toByteArray())
+    }
+}
