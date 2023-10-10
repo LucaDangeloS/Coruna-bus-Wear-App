@@ -22,6 +22,7 @@ import com.example.coruabuswear.data.models.Bus
 import com.example.coruabuswear.data.models.BusStop
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.pager.PagerState
@@ -77,8 +78,8 @@ fun BusStopPage(stop: BusStop, pagerState: PagerState) {
             // Add alternative implementation for square watches?
             ScalingLazyColumn(
                 modifier = Modifier
-                    .fillMaxSize(),
-//                    .padding(columnPadding),
+                    .fillMaxSize()
+                    .absoluteOffset(y = 10.dp),
                 state = scrollState,
                 verticalArrangement = Arrangement.spacedBy(3.dp),
                 anchorType = ScalingLazyListAnchorType.ItemStart,
