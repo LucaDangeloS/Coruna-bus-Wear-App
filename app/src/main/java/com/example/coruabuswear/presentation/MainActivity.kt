@@ -12,7 +12,9 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -30,6 +34,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
@@ -50,6 +56,7 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
+import com.example.coruabuswear.R
 import com.example.coruabuswear.data.ApiConstants.BUS_API_FETCH_TIME
 import com.example.coruabuswear.data.ContextHolder.setApplicationContext
 import com.example.coruabuswear.data.local.clearAllSharedPreferences
@@ -289,11 +296,13 @@ class MainActivity : FragmentActivity() {
                 ) {
                     Box(
                         modifier = Modifier
-                        .fillMaxSize()
-                        .align(Alignment.CenterHorizontally)
+                            .fillMaxSize()
+                            .align(Alignment.CenterHorizontally)
                         ) {
                         CircularProgressIndicator(
-                            modifier = Modifier.fillMaxSize().displayCutoutPadding(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .displayCutoutPadding(),
                             indicatorColor = wearColorPalette.primary,
                             trackColor = MaterialTheme.colors.onBackground.copy(alpha = 0.3f),
                             strokeWidth = 6.dp
@@ -384,18 +393,29 @@ class MainActivity : FragmentActivity() {
         ) {
             HorizontalPager(
                 maxPages,
-                state = pagerState,
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colors.background)
-                    .padding(bottom = 3.dp)
-            ) { page ->
-                if (page == 0) {
-                    StopsPage(busStops, pagerState)
-                } else {
-                    BusStopPage(busStops[page - 1], pagerState)
+                    .padding(bottom = 3.dp),
+                state = pagerState,
+                pageSpacing = 0.dp,
+                userScrollEnabled = true,
+                reverseLayout = false,
+                beyondBoundsPageCount = 0,
+                pageSize = PageSize.Fill,
+                flingBehavior = PagerDefaults.flingBehavior(state = pagerState),
+                key = null,
+                pageNestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
+                    Orientation.Horizontal
+                ),
+                pageContent = {
+                    if (it == 0) {
+                        StopsPage(busStops, pagerState)
+                    } else {
+                        BusStopPage(busStops[it - 1], pagerState)
+                    }
                 }
-            }
+            )
         }
     }
 
@@ -411,8 +431,31 @@ class MainActivity : FragmentActivity() {
 
     @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
     @Composable
-    fun DefaultPreview() {
-        WearApp("Preview Android")
+    fun SplashScreen() {
+        CoruñaBusWearTheme {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colors.background)
+            ) {
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(
+                            // Grab the logo from the drawable folder
+                            id = R.drawable.ic_launcher
+                        ),
+                        contentDescription = "Logo",
+                        contentScale = ContentScale.Fit,
+                    )
+                }
+            }
+        }
     }
 }
 
