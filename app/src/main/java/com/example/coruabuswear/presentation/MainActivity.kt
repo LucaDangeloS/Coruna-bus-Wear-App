@@ -16,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -224,10 +225,10 @@ class MainActivity : FragmentActivity() {
             // call the API to get the buses in the stops
             lifecycleScope.launch(Dispatchers.IO) {
                 for (stop in busStops) {
-//                    retryUpdateDefinitions ({
-//                        stop.updateBuses(fetchBuses(stop.id))
-//                    }, this@MainActivity)
-                    stop.updateBuses(mockBusApi(this@MainActivity))
+                    retryUpdateDefinitions ({
+                        stop.updateBuses(fetchBuses(stop.id))
+                    }, this@MainActivity)
+//                    stop.updateBuses(mockBusApi(this@MainActivity))
                 }
                 withContext(Dispatchers.Main) {
                     displayContent {
@@ -289,9 +290,10 @@ class MainActivity : FragmentActivity() {
                     Box(
                         modifier = Modifier
                         .fillMaxSize()
-                        .align(Alignment.CenterHorizontally)) {
+                        .align(Alignment.CenterHorizontally)
+                        ) {
                         CircularProgressIndicator(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize().displayCutoutPadding(),
                             indicatorColor = wearColorPalette.primary,
                             trackColor = MaterialTheme.colors.onBackground.copy(alpha = 0.3f),
                             strokeWidth = 6.dp
@@ -299,9 +301,10 @@ class MainActivity : FragmentActivity() {
                         Text(
                             modifier = Modifier
                                 .align(Alignment.Center)
-                                .padding(4.dp),
+                                .padding(6.dp),
                             text = loadingText ?: "",
                             color = MaterialTheme.colors.onBackground,
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
@@ -316,100 +319,100 @@ class MainActivity : FragmentActivity() {
             }
         }
     }
-}
-
-@Composable
-fun WearApp(text: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colors.background)
-    ) {
-        val scrollState = rememberScrollState()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(8.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            ShowText(text)
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun WearApp(busStops: List<BusStop>) {
-    val currentPageIndex by remember { mutableStateOf(0) }
-    val maxPages = busStops.size + 1
-    //    https://www.youtube.com/watch?v=2CzWz5Ad4iM <- Rotary input TODO
-    val pagerState = rememberPagerState(initialPage = currentPageIndex)
-    val pageIndicatorState: PageIndicatorState = remember {
-        object : PageIndicatorState {
-            override val pageOffset: Float
-                get() = 0f
-            override val selectedPage: Int
-                get() = pagerState.currentPage
-            override val pageCount: Int
-                get() = maxPages
-        }
-    }
-
-    Scaffold (
-        pageIndicator = {
-            HorizontalPageIndicator(
-                pageIndicatorState = pageIndicatorState,
-                selectedColor = MaterialTheme.colors.primary,
-                unselectedColor = MaterialTheme.colors.onSecondary.copy(alpha = 0.6f),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp)
-            )
-        },
-        timeText = {
-            TimeText(
-                timeTextStyle = TextStyle(
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colors.onSecondary,
-                ),
-
-            )
-        },
-        vignette = {
-            Vignette(vignettePosition = VignettePosition.TopAndBottom)
-        }
-    ) {
-        HorizontalPager(
-            maxPages,
-            state = pagerState,
+    @Composable
+    fun WearApp(text: String) {
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colors.background)
-                .padding(bottom = 3.dp)
-        ) { page ->
-            if (page == 0) {
-                StopsPage(busStops, pagerState)
-            } else {
-                BusStopPage(busStops[page - 1], pagerState)
+        ) {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                ShowText(text)
             }
         }
     }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Composable
+    fun WearApp(busStops: List<BusStop>) {
+        val currentPageIndex by remember { mutableStateOf(0) }
+        val maxPages = busStops.size + 1
+        //    https://www.youtube.com/watch?v=2CzWz5Ad4iM <- Rotary input TODO
+        val pagerState = rememberPagerState(initialPage = currentPageIndex)
+        val pageIndicatorState: PageIndicatorState = remember {
+            object : PageIndicatorState {
+                override val pageOffset: Float
+                    get() = 0f
+                override val selectedPage: Int
+                    get() = pagerState.currentPage
+                override val pageCount: Int
+                    get() = maxPages
+            }
+        }
+
+        Scaffold (
+            pageIndicator = {
+                HorizontalPageIndicator(
+                    pageIndicatorState = pageIndicatorState,
+                    selectedColor = MaterialTheme.colors.primary,
+                    unselectedColor = MaterialTheme.colors.onSecondary.copy(alpha = 0.6f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                )
+            },
+            timeText = {
+                TimeText(
+                    timeTextStyle = TextStyle(
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colors.onSecondary,
+                    ),
+
+                )
+            },
+            vignette = {
+                Vignette(vignettePosition = VignettePosition.TopAndBottom)
+            }
+        ) {
+            HorizontalPager(
+                maxPages,
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colors.background)
+                    .padding(bottom = 3.dp)
+            ) { page ->
+                if (page == 0) {
+                    StopsPage(busStops, pagerState)
+                } else {
+                    BusStopPage(busStops[page - 1], pagerState)
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun ShowText(text: String) {
+        Text(
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                color = wearColorPalette.primary,
+                text = text
+        )
+    }
+
+    @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
+    @Composable
+    fun DefaultPreview() {
+        WearApp("Preview Android")
+    }
 }
 
-@Composable
-fun ShowText(text: String) {
-    Text(
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            color = wearColorPalette.primary,
-            text = text
-    )
-}
-
-@Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
-@Composable
-fun DefaultPreview() {
-    WearApp("Preview Android")
-}
