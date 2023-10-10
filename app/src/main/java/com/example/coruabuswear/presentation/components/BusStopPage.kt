@@ -48,7 +48,6 @@ import java.lang.Float.min
 import kotlin.math.absoluteValue
 import kotlin.math.max
 
-@SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BusStopPage(stop: BusStop, pagerState: PagerState) {
@@ -123,7 +122,7 @@ fun BusListHeader(stop: BusStop, scrollState: ScalingLazyListState, pagerState: 
     val scrollFadingIndex = 2f
 //    println("${scrollState.centerItemIndex} ${scrollState.centerItemScrollOffset}")
     val headerAlpha by animateFloatAsState(
-        targetValue = (scrollFadingIndex - (scrollFractionIndex)).coerceIn(0f, 0.999f),
+        targetValue = (scrollFadingIndex - (scrollFractionIndex)).coerceIn(0f, 0.999f), label = "headerAlpha",
 //            1 - (pagerState.currentPageOffsetFraction * 2).absoluteValue)
     )
     val headerOffset by animateDpAsState(
