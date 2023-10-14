@@ -8,12 +8,16 @@ package com.example.coruabuswear.presentation
 
 import android.content.Context
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,23 +33,23 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Devices
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.wear.ambient.AmbientModeSupport
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.HorizontalPageIndicator
 import androidx.wear.compose.material.MaterialTheme
@@ -56,7 +60,6 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
-import com.example.coruabuswear.R
 import com.example.coruabuswear.data.ApiConstants.BUS_API_FETCH_TIME
 import com.example.coruabuswear.data.ContextHolder.setApplicationContext
 import com.example.coruabuswear.data.local.clearAllSharedPreferences
@@ -68,9 +71,7 @@ import com.example.coruabuswear.data.models.BusStop
 import com.example.coruabuswear.data.providers.BusProvider
 import com.example.coruabuswear.data.providers.BusProvider.fetchBuses
 import com.example.coruabuswear.data.providers.BusProvider.fetchStops
-import com.example.coruabuswear.data.providers.BusProvider.mockBusApi
 import com.example.coruabuswear.data.providers.LocationProvider.startRegularLocationUpdates
-import com.example.coruabuswear.data.providers.PermissionNotGrantedException
 import com.example.coruabuswear.presentation.components.BusStopPage
 import com.example.coruabuswear.presentation.components.StopsPage
 import com.example.coruabuswear.presentation.theme.wearColorPalette
@@ -90,6 +91,8 @@ class MainActivity : FragmentActivity() {
     private var executor = Executors.newSingleThreadScheduledExecutor()
     private var busTaskScheduler: ScheduledFuture<*>? = null
     private var busStops: List<BusStop> = mutableListOf()
+
+    private var vibrator: Vibrator? = null
 //    private lateinit var ambientController: AmbientModeSupport.AmbientController
 
     // Ambient functionality, that for some reason... doesn't work in my watch
@@ -112,19 +115,40 @@ class MainActivity : FragmentActivity() {
 //        ambientController = AmbientModeSupport.attach(this)
 //        ambientController.setAutoResumeEnabled(true)
 
+        // Set vibrator service
+        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(VIBRATOR_SERVICE) as Vibrator
+        }
+
+        // UPdate UI to loading state
         updateUILoading("Obteniendo localización...")
+
+        // create location listener callback
         locationListener = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
+                // Create double vibration effect
+                val vibrationEffect = android.os.VibrationEffect.createWaveform(
+                    longArrayOf(20, 60, 20),
+                    intArrayOf(30, 0, 30),
+                    -1
+                )
                 updateUILoading("Obteniendo paradas...")
                 // Handle location updates here
                 val _location = locationResult.lastLocation
                 if (_location != null) {
+                    vibrator?.vibrate(vibrationEffect)
                     updateUIWithStops(_location)
                 } else {
                     Log.d("DEBUG_TAG", "Location is null")
                 }
             }
         }
+
+        // Start location updates and attach listener
         startRegularLocationUpdates(locationListener, this@MainActivity)
     }
 
@@ -353,6 +377,10 @@ class MainActivity : FragmentActivity() {
     @Composable
     fun WearApp(busStops: List<BusStop>) {
         val currentPageIndex by remember { mutableStateOf(0) }
+        val focusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+        }
         val maxPages = busStops.size + 1
         //    https://www.youtube.com/watch?v=2CzWz5Ad4iM <- Rotary input TODO
         val pagerState = rememberPagerState(initialPage = currentPageIndex)
@@ -365,6 +393,24 @@ class MainActivity : FragmentActivity() {
                 override val pageCount: Int
                     get() = maxPages
             }
+        }
+        val animationScope = rememberCoroutineScope()
+        val vibrationEffect = android.os.VibrationEffect.createOneShot(50, 20)
+
+        fun onPageScrollByScroll(pixels: Float) {
+            val currentPage = pagerState.currentPage
+            val nextPage = pixels / 20
+            val truncatedNextPage = if (nextPage > 1) 1 else if (nextPage < -1) -1 else 0
+            if (truncatedNextPage == 0) {
+                return
+            }
+            if (currentPage + truncatedNextPage < 0 || currentPage + truncatedNextPage >= maxPages) {
+                return
+            }
+            animationScope.launch {
+                pagerState.animateScrollToPage(currentPage + truncatedNextPage)
+            }
+            vibrator?.vibrate(vibrationEffect)
         }
 
         Scaffold (
@@ -396,7 +442,13 @@ class MainActivity : FragmentActivity() {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colors.background)
-                    .padding(bottom = 3.dp),
+                    .padding(bottom = 3.dp)
+                    .onRotaryScrollEvent {
+                        onPageScrollByScroll(it.horizontalScrollPixels)
+                        true
+                    }
+                    .focusRequester(focusRequester)
+                    .focusable(),
                 state = pagerState,
                 pageSpacing = 0.dp,
                 userScrollEnabled = true,
@@ -410,7 +462,7 @@ class MainActivity : FragmentActivity() {
                 ),
                 pageContent = {
                     if (it == 0) {
-                        StopsPage(busStops, pagerState)
+                        StopsPage(busStops, pagerState, animationScope)
                     } else {
                         BusStopPage(busStops[it - 1], pagerState)
                     }

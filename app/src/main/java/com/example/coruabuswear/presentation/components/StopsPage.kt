@@ -50,7 +50,7 @@ import okhttp3.internal.wait
 // receives a list of stops
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StopsPage(stops: List<BusStop>, pagerState: PagerState) {
+fun StopsPage(stops: List<BusStop>, pagerState: PagerState, animationScope: CoroutineScope) {
     val columnPadding = PaddingValues(
         top = 6.dp,
         bottom = 0.dp,
@@ -58,7 +58,6 @@ fun StopsPage(stops: List<BusStop>, pagerState: PagerState) {
         end = 10.dp
     )
     val scrollState: ScalingLazyListState = rememberScalingLazyListState()
-    val animationScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
