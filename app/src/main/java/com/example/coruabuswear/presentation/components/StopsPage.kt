@@ -98,8 +98,8 @@ fun StopListElement(stop: BusStop, index: Int, pagerState: PagerState, animation
     Card (
         onClick =  {
             animationScope.launch {
-                // TODO: Change it to scrollToPage as it doesn't work well with the animation...
-                pagerState.animateScrollToPage(index)
+                // TODO: Make animation work?
+                pagerState.scrollToPage(index)
             }
         },
         modifier = Modifier
