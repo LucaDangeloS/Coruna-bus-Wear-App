@@ -90,7 +90,7 @@ class MainActivity : FragmentActivity() {
     private var executor = Executors.newSingleThreadScheduledExecutor()
     private var busTaskScheduler: ScheduledFuture<*>? = null
     private var busStops: List<BusStop> = mutableListOf()
-    private lateinit var ambientController: AmbientModeSupport.AmbientController
+//    private lateinit var ambientController: AmbientModeSupport.AmbientController
 
     // Ambient functionality, that for some reason... doesn't work in my watch
 //    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback {
@@ -109,8 +109,8 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setApplicationContext(this)
-        ambientController = AmbientModeSupport.attach(this)
-        ambientController.setAutoResumeEnabled(true)
+//        ambientController = AmbientModeSupport.attach(this)
+//        ambientController.setAutoResumeEnabled(true)
 
         updateUILoading("Obteniendo localización...")
         locationListener = object : LocationCallback() {
@@ -427,35 +427,6 @@ class MainActivity : FragmentActivity() {
                 color = wearColorPalette.primary,
                 text = text
         )
-    }
-
-    @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
-    @Composable
-    fun SplashScreen() {
-        CoruñaBusWearTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colors.background)
-            ) {
-                val scrollState = rememberScrollState()
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(
-                            // Grab the logo from the drawable folder
-                            id = R.drawable.ic_launcher
-                        ),
-                        contentDescription = "Logo",
-                        contentScale = ContentScale.Fit,
-                    )
-                }
-            }
-        }
     }
 }
 

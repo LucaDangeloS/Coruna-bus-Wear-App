@@ -63,7 +63,7 @@
             android:name=".presentation.MainActivity"
             android:exported="true"
             android:foregroundServiceType="location"
-            android:theme="@android:style/Theme.DeviceDefault">
+            android:theme="@style/Theme.SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
