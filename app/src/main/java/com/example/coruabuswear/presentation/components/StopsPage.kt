@@ -2,6 +2,7 @@ package com.example.coruabuswear.presentation.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -112,16 +114,21 @@ fun StopListElement(stop: BusStop, index: Int, pagerState: PagerState, animation
         ),
     ) {
         Column {
-            AutoResizingText(
+            Text(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 1.dp),
+                    .padding(vertical = 1.dp)
+                    .basicMarquee(
+                        delayMillis = 1000,
+                        initialDelayMillis = 1500,
+                    ),
                 text = stop.name,
                 color = MaterialTheme.colors.onSecondary,
-                targetTextSize = 17.sp,
-                textAlign = TextAlign.Center,
+                fontSize = 16.sp,
                 maxLines = 1,
-                fontWeight = FontWeight.W500
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.W500,
             )
             // add little icons
             BusStopsIconRow(stop, lines)

@@ -51,6 +51,7 @@ import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.ambient.AmbientLifecycleObserver
 import androidx.wear.compose.material.HorizontalPageIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PageIndicatorState
@@ -93,6 +94,26 @@ class MainActivity : FragmentActivity() {
     private var busStops: List<BusStop> = mutableListOf()
 
     private var vibrator: Vibrator? = null
+
+    val ambientCallback = object : AmbientLifecycleObserver.AmbientLifecycleCallback {
+        override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
+            // ... Called when moving from interactive mode into ambient mode.
+            Log.d("DEBUG_TAG", "ENTER AMBIENT")
+        }
+
+        override fun onExitAmbient() {
+            // ... Called when leaving ambient mode, back into interactive mode.
+            Log.d("DEBUG_TAG", "EXIT AMBIENT")
+        }
+
+        override fun onUpdateAmbient() {
+            // ... Called by the system in order to allow the app to periodically
+            // update the display while in ambient mode. Typically the system will
+            // call this every 60 seconds.
+            Log.d("DEBUG_TAG", "UPDATE AMBIENT")
+        }
+    }
+    private val ambientObserver = AmbientLifecycleObserver(this, ambientCallback)
 //    private lateinit var ambientController: AmbientModeSupport.AmbientController
 
     // Ambient functionality, that for some reason... doesn't work in my watch
@@ -114,6 +135,7 @@ class MainActivity : FragmentActivity() {
         setApplicationContext(this)
 //        ambientController = AmbientModeSupport.attach(this)
 //        ambientController.setAutoResumeEnabled(true)
+        lifecycle.addObserver(ambientObserver)
 
         // Set vibrator service
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -382,7 +404,6 @@ class MainActivity : FragmentActivity() {
             focusRequester.requestFocus()
         }
         val maxPages = busStops.size + 1
-        //    https://www.youtube.com/watch?v=2CzWz5Ad4iM <- Rotary input TODO
         val pagerState = rememberPagerState(initialPage = currentPageIndex)
         val pageIndicatorState: PageIndicatorState = remember {
             object : PageIndicatorState {
