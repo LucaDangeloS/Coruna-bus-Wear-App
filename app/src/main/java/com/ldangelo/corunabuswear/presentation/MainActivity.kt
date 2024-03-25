@@ -63,7 +63,7 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import com.ldangelo.corunabuswear.data.ApiConstants.BUS_API_FETCH_TIME
 import com.ldangelo.corunabuswear.data.ContextHolder.setApplicationContext
-import com.ldangelo.corunabuswear.data.local.clearAllSharedPreferences
+import com.ldangelo.corunabuswear.data.local.clearAllStoredBusData
 import com.ldangelo.corunabuswear.data.local.saveBusConnection
 import com.ldangelo.corunabuswear.data.local.saveBusLine
 import com.ldangelo.corunabuswear.data.local.saveBusStop
@@ -78,6 +78,7 @@ import com.ldangelo.corunabuswear.presentation.components.StopsPage
 import com.ldangelo.corunabuswear.presentation.theme.wearColorPalette
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
+import com.ldangelo.corunabuswear.data.AppConstants
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -211,7 +212,7 @@ class MainActivity : FragmentActivity() {
             updateUILoading("Actualizando índice...")
             Log.d("DEBUG_TAG", "Updating Bus definitions")
             val (stops, lines, connections) = BusProvider.fetchStopsLinesData()
-            clearAllSharedPreferences(context)
+            clearAllStoredBusData(context)
             stops.forEach { busStop ->
                 saveBusStop(context, busStop.id.toString(), busStop)
             }
@@ -256,11 +257,18 @@ class MainActivity : FragmentActivity() {
     private fun updateUIWithStops(location: Location) {
         Log.d("DEBUG_TAG", "Update UI method called")
         busTaskScheduler?.cancel(true)
-
+        val radius = applicationContext.getSharedPreferences(AppConstants.SETTINGS_PREF, Context.MODE_PRIVATE).getInt(
+            AppConstants.STOPS_RADIUS_KEY,
+            AppConstants.DEFAULT_STOPS_RADIUS
+        )
+        val limit = applicationContext.getSharedPreferences(AppConstants.SETTINGS_PREF, Context.MODE_PRIVATE).getInt(
+            AppConstants.STOPS_FETCH_KEY,
+            AppConstants.DEFAULT_STOPS_FETCH
+        )
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 busStops = retryUpdateDefinitions ({
-                    fetchStops(location.latitude, location.longitude, 300, 3)
+                    fetchStops(location.latitude, location.longitude, radius, limit)
                 }, this@MainActivity)
                 startRegularBusUpdates()
             } catch (e: BusProvider.TooManyRequestsException) {

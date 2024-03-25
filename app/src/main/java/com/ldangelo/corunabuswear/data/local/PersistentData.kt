@@ -27,7 +27,7 @@ inline fun <reified BusLine> getBusConnection(context: Context, key: String): Bu
     return getObject<BusLine>("BusConnection", context, key)
 }
 
-// Functions to save and retrieve a custom object from SharedPreferences
+// Functions to save and retrieve a custom objects from SharedPreferences
 fun <T> saveObject(prefName: String, context: Context, key: String, obj: T) {
     val gson = Gson()
     val json = gson.toJson(obj)
@@ -42,7 +42,7 @@ inline fun <reified T> getObject(prefName: String, context: Context, key: String
     return gson.fromJson(json, T::class.java)
 }
 
-fun clearAllSharedPreferences(context: Context) {
+fun clearAllStoredBusData(context: Context) {
     var sharedPreferences = context.getSharedPreferences("BusLine", Context.MODE_PRIVATE)
     var editor = sharedPreferences.edit()
     editor.clear()

@@ -17,6 +17,11 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices.getFusedLocationProviderClient
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.Tasks.await
+import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_LOC_DISTANCE
+import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_LOC_INTERVAL
+import com.ldangelo.corunabuswear.data.AppConstants.LOC_DISTANCE_KEY
+import com.ldangelo.corunabuswear.data.AppConstants.LOC_INTERVAL_KEY
+import com.ldangelo.corunabuswear.data.AppConstants.SETTINGS_PREF
 
 object LocationProvider {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -53,9 +58,13 @@ object LocationProvider {
             Log.d("DEBUG_TAG", "Permission not granted")
 //            throw PermissionNotGrantedException("Permission not granted")
         }
-
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 30000)
-            .setMinUpdateDistanceMeters(30f)
+        val interval = context.getSharedPreferences(SETTINGS_PREF, Context.MODE_PRIVATE)
+            .getLong(LOC_INTERVAL_KEY, DEFAULT_LOC_INTERVAL)
+        val distanceUpdate = context.getSharedPreferences(SETTINGS_PREF, Context.MODE_PRIVATE)
+            .getFloat(LOC_DISTANCE_KEY, DEFAULT_LOC_DISTANCE)
+        val locationRequest =
+            LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, interval)
+                .setMinUpdateDistanceMeters(distanceUpdate)
 
         fusedLocationClient.requestLocationUpdates(
             locationRequest.build(),
