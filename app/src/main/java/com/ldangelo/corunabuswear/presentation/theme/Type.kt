@@ -1,4 +1,4 @@
-package com.example.coruabuswear.presentation.theme
+package com.ldangelo.corunabuswear.presentation.theme
 
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily

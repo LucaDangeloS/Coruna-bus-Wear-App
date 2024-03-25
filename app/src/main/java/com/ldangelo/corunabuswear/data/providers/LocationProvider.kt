@@ -1,4 +1,4 @@
-package com.example.coruabuswear.data.providers
+package com.ldangelo.corunabuswear.data.providers
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -10,21 +10,19 @@ import android.location.LocationManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.coruabuswear.data.ContextHolder.getApplicationContext
+import com.ldangelo.corunabuswear.data.ContextHolder.getApplicationContext
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices.getFusedLocationProviderClient
 import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks.await
-import kotlinx.coroutines.CoroutineScope
 
 object LocationProvider {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     @SuppressLint("MissingPermission")
-    suspend fun fetchLocation(activity: Activity): Location? {
+    fun fetchLocation(activity: Activity): Location? {
         val context = getApplicationContext()
         var location: Location? = null
         fusedLocationClient = getFusedLocationProviderClient(context)

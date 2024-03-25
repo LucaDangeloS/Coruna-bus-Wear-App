@@ -1,4 +1,4 @@
-package com.example.coruabuswear.presentation.components
+package com.ldangelo.corunabuswear.presentation.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf

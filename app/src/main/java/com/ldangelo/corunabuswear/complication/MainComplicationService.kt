@@ -1,4 +1,4 @@
-package com.example.coruabuswear.complication
+package com.ldangelo.corunabuswear.complication
 
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType

@@ -1,4 +1,4 @@
-package com.example.coruabuswear.presentation.theme
+package com.ldangelo.corunabuswear.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.wear.compose.material.Colors
@@ -22,7 +22,7 @@ internal val wearColorPalette: Colors = Colors(
         error = RedTranviasSecondary,
         onPrimary = Color.White,
         onSecondary = Ash,
-        onError = Color.Black,
+        onError = RedTranviasSecondary2,
         background = Color.White,
         onBackground = DarkerAsh,
 )

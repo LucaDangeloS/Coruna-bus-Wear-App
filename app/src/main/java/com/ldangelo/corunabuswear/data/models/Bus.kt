@@ -1,4 +1,4 @@
-package com.example.coruabuswear.data.models
+package com.ldangelo.corunabuswear.data.models
 
 data class Bus(val id: Int, val line: BusLine) {
     /*

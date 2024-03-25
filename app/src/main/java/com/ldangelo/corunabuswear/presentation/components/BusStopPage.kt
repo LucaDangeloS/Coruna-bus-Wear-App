@@ -1,4 +1,4 @@
-package com.example.coruabuswear.presentation.components
+package com.ldangelo.corunabuswear.presentation.components
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -16,8 +16,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.ScalingLazyColumn
 import androidx.wear.compose.material.Text
-import com.example.coruabuswear.data.models.Bus
-import com.example.coruabuswear.data.models.BusStop
+import com.ldangelo.corunabuswear.data.models.Bus
+import com.ldangelo.corunabuswear.data.models.BusStop
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absoluteOffset

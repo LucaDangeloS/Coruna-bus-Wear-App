@@ -1,16 +1,16 @@
-package com.example.coruabuswear.data.providers
+package com.ldangelo.corunabuswear.data.providers
 
 import android.content.Context
 import android.util.Log
 import androidx.compose.ui.graphics.Color as Colorx
-import com.example.coruabuswear.data.ApiConstants.BUS_API_ROOT
-import com.example.coruabuswear.data.ContextHolder.getApplicationContext
-import com.example.coruabuswear.data.local.getBusConnection
-import com.example.coruabuswear.data.local.getBusLine
-import com.example.coruabuswear.data.local.getBusStop
-import com.example.coruabuswear.data.models.Bus
-import com.example.coruabuswear.data.models.BusLine
-import com.example.coruabuswear.data.models.BusStop
+import com.ldangelo.corunabuswear.data.ApiConstants.BUS_API_ROOT
+import com.ldangelo.corunabuswear.data.ContextHolder.getApplicationContext
+import com.ldangelo.corunabuswear.data.local.getBusConnection
+import com.ldangelo.corunabuswear.data.local.getBusLine
+import com.ldangelo.corunabuswear.data.local.getBusStop
+import com.ldangelo.corunabuswear.data.models.Bus
+import com.ldangelo.corunabuswear.data.models.BusLine
+import com.ldangelo.corunabuswear.data.models.BusStop
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray

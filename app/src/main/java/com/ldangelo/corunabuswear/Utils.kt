@@ -1,4 +1,4 @@
-package com.example.coruabuswear
+package com.ldangelo.corunabuswear
 
 import android.content.res.Resources
 import androidx.compose.ui.unit.Dp

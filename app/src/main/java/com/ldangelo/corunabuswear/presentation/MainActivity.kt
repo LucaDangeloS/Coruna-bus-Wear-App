@@ -4,7 +4,7 @@
  * changes to the libraries and their usages.
  */
 
-package com.example.coruabuswear.presentation
+package com.ldangelo.corunabuswear.presentation
 
 import android.content.Context
 import android.location.Location
@@ -13,8 +13,8 @@ import android.os.Bundle
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -55,36 +55,38 @@ import androidx.wear.ambient.AmbientLifecycleObserver
 import androidx.wear.compose.material.HorizontalPageIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PageIndicatorState
-import com.example.coruabuswear.presentation.theme.CoruñaBusWearTheme
+import com.ldangelo.corunabuswear.presentation.theme.CoruñaBusWearTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
-import com.example.coruabuswear.data.ApiConstants.BUS_API_FETCH_TIME
-import com.example.coruabuswear.data.ContextHolder.setApplicationContext
-import com.example.coruabuswear.data.local.clearAllSharedPreferences
-import com.example.coruabuswear.data.local.saveBusConnection
-import com.example.coruabuswear.data.local.saveBusLine
-import com.example.coruabuswear.data.local.saveBusStop
-import com.example.coruabuswear.data.local.saveLog
-import com.example.coruabuswear.data.models.BusStop
-import com.example.coruabuswear.data.providers.BusProvider
-import com.example.coruabuswear.data.providers.BusProvider.fetchBuses
-import com.example.coruabuswear.data.providers.BusProvider.fetchStops
-import com.example.coruabuswear.data.providers.LocationProvider.startRegularLocationUpdates
-import com.example.coruabuswear.presentation.components.BusStopPage
-import com.example.coruabuswear.presentation.components.StopsPage
-import com.example.coruabuswear.presentation.theme.wearColorPalette
+import com.ldangelo.corunabuswear.data.ApiConstants.BUS_API_FETCH_TIME
+import com.ldangelo.corunabuswear.data.ContextHolder.setApplicationContext
+import com.ldangelo.corunabuswear.data.local.clearAllSharedPreferences
+import com.ldangelo.corunabuswear.data.local.saveBusConnection
+import com.ldangelo.corunabuswear.data.local.saveBusLine
+import com.ldangelo.corunabuswear.data.local.saveBusStop
+import com.ldangelo.corunabuswear.data.local.saveLog
+import com.ldangelo.corunabuswear.data.models.BusStop
+import com.ldangelo.corunabuswear.data.providers.BusProvider
+import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchBuses
+import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchStops
+import com.ldangelo.corunabuswear.data.providers.LocationProvider.startRegularLocationUpdates
+import com.ldangelo.corunabuswear.presentation.components.BusStopPage
+import com.ldangelo.corunabuswear.presentation.components.StopsPage
+import com.ldangelo.corunabuswear.presentation.theme.wearColorPalette
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.android.BuildConfig
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+
 
 class MainActivity : FragmentActivity() {
     private var definitionsUpdated = false
@@ -160,10 +162,10 @@ class MainActivity : FragmentActivity() {
                 )
                 updateUILoading("Obteniendo paradas...")
                 // Handle location updates here
-                val _location = locationResult.lastLocation
-                if (_location != null) {
+                val location = locationResult.lastLocation
+                if (location != null) {
                     vibrator?.vibrate(vibrationEffect)
-                    updateUIWithStops(_location)
+                    updateUIWithStops(location)
                 } else {
                     Log.d("DEBUG_TAG", "Location is null")
                 }
@@ -182,13 +184,13 @@ class MainActivity : FragmentActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (grantResults.isEmpty()) {
             Log.d("DEBUG_TAG", "Request cancelled")
-            updateUIErrorAPI("Permiso de localización no concedido")
+            updateUIError("Permiso de localización no concedido")
             return
         } else {
             for (result in grantResults) {
                 if (result != PERMISSION_GRANTED) {
                     Log.d("DEBUG_TAG", "Permission not granted")
-                    updateUIErrorAPI("Permiso de localización no concedido")
+                    updateUIError("Permiso de localización no concedido")
                     return
                 }
             }
@@ -231,10 +233,17 @@ class MainActivity : FragmentActivity() {
         }, 0, BUS_API_FETCH_TIME, TimeUnit.MILLISECONDS)
     }
 
-    private fun updateUIErrorAPI(text: String) {
-        displayContent {
-            WearApp(text)
+    private fun updateUIError(text: String, realError: String = "") {
+        if (BuildConfig.DEBUG) {
+            displayContent {
+                WearApp(text + "\n" + realError)
+            }
+        } else {
+            displayContent {
+                WearApp(text)
+            }
         }
+
     }
 
     // Later switch to changing to first tab
@@ -257,12 +266,12 @@ class MainActivity : FragmentActivity() {
             } catch (e: BusProvider.TooManyRequestsException) {
                 Log.d("ERROR_TAG", "Too many requests: $e")
                 withContext(Dispatchers.Main) {
-                    updateUIErrorAPI("Demasiadas peticiones, espera un poco")
+                    updateUIError("Demasiadas peticiones, espera un poco")
                 }
             } catch (e: IOException) {
                 Log.d("ERROR_TAG", "Error fetching stops: $e")
                 withContext(Dispatchers.Main) {
-                    updateUIErrorAPI("Error al obtener paradas")
+                    updateUIError("Error al obtener paradas", e.toString())
                 }
             }
         }
@@ -291,7 +300,7 @@ class MainActivity : FragmentActivity() {
             }
         } catch (e: IOException) {
             Log.d("ERROR_TAG", "Error fetching buses: $e")
-            updateUIErrorAPI("Error al obtener buses")
+            updateUIError("Error al obtener buses", e.toString())
         }
     }
 
@@ -304,11 +313,10 @@ class MainActivity : FragmentActivity() {
                         modifier = Modifier.padding(2.dp),
                         // reduce font
                         timeTextStyle =
-                            TextStyle(
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colors.onSecondary,
-                            )
-                        ,
+                        TextStyle(
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colors.onSecondary,
+                        ),
 //                        endLinearContent = {
 //                            Text(
 //                                text = endText,y
@@ -404,7 +412,10 @@ class MainActivity : FragmentActivity() {
             focusRequester.requestFocus()
         }
         val maxPages = busStops.size + 1
-        val pagerState = rememberPagerState(initialPage = currentPageIndex)
+        val pagerState = rememberPagerState(
+            initialPage = currentPageIndex,
+            pageCount = { maxPages }
+        )
         val pageIndicatorState: PageIndicatorState = remember {
             object : PageIndicatorState {
                 override val pageOffset: Float
@@ -417,6 +428,23 @@ class MainActivity : FragmentActivity() {
         }
         val animationScope = rememberCoroutineScope()
         val vibrationEffect = android.os.VibrationEffect.createOneShot(50, 20)
+        val backCallback = remember {
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    // if page is not 0, go to page 0
+                    if (pagerState.currentPage != 0) {
+                        animationScope.launch {
+                            pagerState.animateScrollToPage(0)
+                        }
+                        vibrator?.vibrate(vibrationEffect)
+                    } else {
+                        // else, exit app
+                        finish()
+                    }
+                }
+            }
+        }
+        onBackPressedDispatcher.addCallback(backCallback)
 
         fun onPageScrollByScroll(pixels: Float) {
             val currentPage = pagerState.currentPage
@@ -459,7 +487,7 @@ class MainActivity : FragmentActivity() {
             }
         ) {
             HorizontalPager(
-                maxPages,
+                state = pagerState,
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colors.background)
@@ -470,7 +498,6 @@ class MainActivity : FragmentActivity() {
                     }
                     .focusRequester(focusRequester)
                     .focusable(),
-                state = pagerState,
                 pageSpacing = 0.dp,
                 userScrollEnabled = true,
                 reverseLayout = false,
@@ -479,6 +506,7 @@ class MainActivity : FragmentActivity() {
                 flingBehavior = PagerDefaults.flingBehavior(state = pagerState),
                 key = null,
                 pageNestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
+                    pagerState,
                     Orientation.Horizontal
                 ),
                 pageContent = {

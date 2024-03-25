@@ -1,6 +1,4 @@
-package com.example.coruabuswear.data.models
-import org.json.JSONArray
-import org.json.JSONObject
+package com.ldangelo.corunabuswear.data.models
 import java.lang.Integer.min
 
 data class BusStop (val id: Int, val name: String) {

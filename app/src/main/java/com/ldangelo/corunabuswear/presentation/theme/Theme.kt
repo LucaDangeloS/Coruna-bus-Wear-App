@@ -1,4 +1,4 @@
-package com.example.coruabuswear.presentation.theme
+package com.ldangelo.corunabuswear.presentation.theme
 
 import androidx.compose.runtime.Composable
 import androidx.wear.compose.material.MaterialTheme

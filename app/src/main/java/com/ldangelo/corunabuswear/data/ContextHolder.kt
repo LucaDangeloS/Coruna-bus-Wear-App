@@ -1,4 +1,4 @@
-package com.example.coruabuswear.data
+package com.ldangelo.corunabuswear.data
 
 import android.content.Context
 

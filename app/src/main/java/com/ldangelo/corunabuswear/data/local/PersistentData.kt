@@ -1,6 +1,6 @@
-package com.example.coruabuswear.data.local
+package com.ldangelo.corunabuswear.data.local
 import android.content.Context
-import com.example.coruabuswear.data.AppConstants.LOG_FILE
+import com.ldangelo.corunabuswear.data.AppConstants.LOG_FILE
 import com.google.gson.Gson
 
 fun <BusStop> saveBusStop(context: Context, key: String, obj: BusStop) {
