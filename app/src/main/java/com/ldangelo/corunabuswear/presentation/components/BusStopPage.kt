@@ -2,7 +2,6 @@ package com.ldangelo.corunabuswear.presentation.components
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.ScalingLazyColumn
 import androidx.wear.compose.material.Text
 import com.ldangelo.corunabuswear.data.models.Bus
 import com.ldangelo.corunabuswear.data.models.BusStop
@@ -34,12 +32,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.ScalingLazyListAnchorType
-import androidx.wear.compose.material.ScalingLazyListState
-import androidx.wear.compose.material.rememberScalingLazyListState
+import androidx.wear.compose.foundation.lazy.ScalingLazyListState
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import kotlin.math.max
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BusStopPage(stop: BusStop) {
     val columnPadding = PaddingValues(
@@ -48,7 +45,7 @@ fun BusStopPage(stop: BusStop) {
         start = 10.dp,
         end = 10.dp
     )
-    val scrollState: ScalingLazyListState = rememberScalingLazyListState()
+    val scrollState = ScalingLazyListState()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -100,7 +97,6 @@ fun BusStopPage(stop: BusStop) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BusListHeader(stop: BusStop, scrollState: ScalingLazyListState) {
     val redRectHeight = 62.dp
