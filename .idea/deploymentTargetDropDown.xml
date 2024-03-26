@@ -9,14 +9,17 @@
               <type value="RUNNING_DEVICE_TARGET" />
               <deviceKey>
                 <Key>
-                  <type value="SERIAL_NUMBER" />
-                  <value value="192.168.1.17:33705" />
+                  <type value="VIRTUAL_DEVICE_PATH" />
+                  <value value="C:\Users\Lucad\.android\avd\Wear_OS_Small_Round_API_30.avd" />
                 </Key>
               </deviceKey>
             </Target>
           </runningDeviceTargetSelectedWithDropDown>
-          <timeTargetWasSelectedWithDropDown value="2024-03-25T21:35:32.097413900Z" />
+          <timeTargetWasSelectedWithDropDown value="2024-03-26T12:10:47.324439400Z" />
         </State>
+      </entry>
+      <entry key="corunabuscompanion">
+        <State />
       </entry>
     </value>
   </component>
