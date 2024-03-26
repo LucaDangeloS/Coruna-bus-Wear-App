@@ -1,5 +1,7 @@
 package com.ldangelo.corunabuswear.presentation.components
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -28,15 +30,21 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.CardDefaults
 import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.ScalingLazyListAnchorType
-import androidx.wear.compose.material.ScalingLazyListState
 import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.rememberScalingLazyListState
 import com.ldangelo.corunabuswear.data.models.BusLine
 import com.ldangelo.corunabuswear.data.models.BusStop
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.ScalingLazyListState
+import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.wearable.Wearable
+import com.ldangelo.coruabuswear.R
+import com.ldangelo.corunabuswear.data.ContextHolder
+import com.ldangelo.corunabuswear.data.companion.MessagePaths.DEPLOY_SETTINGS
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.invoke
 
 // receives a list of stops
 @OptIn(ExperimentalFoundationApi::class)
@@ -48,7 +56,7 @@ fun StopsPage(stops: List<BusStop>, pagerState: PagerState, animationScope: Coro
         start = 10.dp,
         end = 10.dp
     )
-    val scrollState: ScalingLazyListState = rememberScalingLazyListState()
+    val scrollState = ScalingLazyListState()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -75,11 +83,40 @@ fun StopsPage(stops: List<BusStop>, pagerState: PagerState, animationScope: Coro
                         StopListElement(stop, index + 1, pagerState, animationScope)
                     }
                 }
+                // some margin at the end
+                item {
+                    Box(
+                        modifier = Modifier
+                            .height(10.dp)
+                            .fillMaxWidth()
+                    )
+                }
+                item {
+                    GearButton(onClick = {
+                        val context = ContextHolder.getApplicationContext()
+                        ContextHolder.getLifecycleScope().launch(Dispatchers.IO) {
+                            getNodes(context).first().also {
+                                val sendTask: Task<*> = Wearable.getMessageClient(context).sendMessage(
+                                    it,
+                                    DEPLOY_SETTINGS,
+                                    "".toByteArray()
+                                ).apply {
+                                    addOnSuccessListener {
+                                        Toast.makeText(context, R.string.settings_open, Toast.LENGTH_SHORT).show()
+                                    }
+                                    addOnFailureListener {
+                                        Toast.makeText(context, R.string.unknown_error, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+
+                            }
+                        }
+                    })
+                }
             }
         }
     }
 }
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StopListElement(stop: BusStop, index: Int, pagerState: PagerState, animationScope: CoroutineScope) {
@@ -134,7 +171,9 @@ fun BusStopsIconRow(busStop: BusStop, lines: List<BusLine>) {
 
     // Stack icons horizontally
     Row (
-        modifier = Modifier.fillMaxWidth().padding(start = 5.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 5.dp),
         horizontalArrangement = Arrangement.Start,
     ) {
         Row(
@@ -146,7 +185,7 @@ fun BusStopsIconRow(busStop: BusStop, lines: List<BusLine>) {
                     modifier = Modifier
                         .height(diameter)
                         .width(diameter)
-                        .clip(RoundedCornerShape(diameter/2))
+                        .clip(RoundedCornerShape(diameter / 2))
                         .background(
                             color = line.color,
                         )

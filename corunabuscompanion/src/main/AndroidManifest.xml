@@ -8,10 +8,21 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CoruñaBusWear">
+        <service
+            android:name=".data.services.SettingsListener"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
         <activity
             android:name=".SyncActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.CoruñaBusWear">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

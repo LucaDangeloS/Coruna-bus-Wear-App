@@ -29,7 +29,9 @@ import com.ldangelo.corunabuswear.data.providers.LocationProvider.startRegularLo
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import com.ldangelo.corunabuswear.data.AppConstants
+import com.ldangelo.corunabuswear.data.ContextHolder.setLifecycleScope
 import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchBuses
+import com.ldangelo.corunabuswear.data.providers.BusProvider.mockBusApi
 import com.ldangelo.corunabuswear.data.providers.retryUpdateDefinitions
 import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUILoading
 import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUIError
@@ -49,8 +51,11 @@ class MainActivity : FragmentActivity() {
     private var executor = Executors.newSingleThreadScheduledExecutor()
     private var busTaskScheduler: ScheduledFuture<*>? = null
     private var busStops: List<BusStop> = mutableListOf()
-
     private var vibrator: Vibrator? = null
+    // mocking
+    private var mockLocation = false
+    private var mockLocationCoordinates = Pair(43.3470, -8.4004)
+    private var mockApi = false
 
     val ambientCallback = object : AmbientLifecycleObserver.AmbientLifecycleCallback {
         override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
@@ -77,6 +82,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setApplicationContext(this)
+        setLifecycleScope(lifecycleScope)
         lifecycle.addObserver(ambientObserver)
 
         // Set vibrator service
@@ -115,6 +121,13 @@ class MainActivity : FragmentActivity() {
         }
 
         // Start location updates and attach listener
+        if (mockLocation) {
+            val location = Location("mock")
+            location.latitude = mockLocationCoordinates.first
+            location.longitude = mockLocationCoordinates.second
+            updateUIWithLocation(location)
+            return
+        }
         startRegularLocationUpdates(locationListener, this@MainActivity)
     }
 
@@ -144,6 +157,10 @@ class MainActivity : FragmentActivity() {
         busTaskScheduler = executor.scheduleAtFixedRate({
             lifecycleScope.launch(Dispatchers.IO) {
                 for (stop in busStops) {
+                    if (mockApi) {
+                        stop.updateBuses(mockBusApi(this@MainActivity))
+                        continue
+                    }
                     try {
                         retryUpdateDefinitions ({
                             stop.updateBuses(fetchBuses(stop.id))
@@ -152,7 +169,6 @@ class MainActivity : FragmentActivity() {
                         // TODO: Append to list of failed fetches
                         continue
                     }
-//                    stop.updateBuses(mockBusApi(this@MainActivity))
                 }
             }
         }, initialDelay, BUS_API_FETCH_TIME * busStops.size, TimeUnit.MILLISECONDS)

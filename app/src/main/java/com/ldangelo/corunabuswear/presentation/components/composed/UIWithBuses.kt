@@ -14,13 +14,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import com.ldangelo.corunabuswear.data.models.BusStop
 import com.ldangelo.corunabuswear.presentation.components.BusStopPage
-import com.ldangelo.corunabuswear.presentation.components.GearButton
 import com.ldangelo.corunabuswear.presentation.components.PagerScaffolding
 import com.ldangelo.corunabuswear.presentation.components.StopsPage
-import com.ldangelo.corunabuswear.presentation.components.getNodes
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 
 @Composable
@@ -47,13 +42,6 @@ fun UIWithBuses(busStops: List<BusStop>, context: Context, vibrator: Vibrator?, 
         if (it == 0) {
             Column {
                 StopsPage(busStops, pagerState, animationScope)
-                GearButton(onClick = {
-                    runBlocking {
-                        launch(Dispatchers.IO) {
-                            getNodes(context)
-                        }
-                    }
-                })
             }
         } else {
             BusStopPage(busStops[it - 1])

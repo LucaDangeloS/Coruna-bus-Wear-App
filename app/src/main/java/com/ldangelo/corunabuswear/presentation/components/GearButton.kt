@@ -22,14 +22,14 @@ fun GearButton(onClick: () -> Unit) {
         shape = MaterialTheme.shapes.small,
         containerColor = MaterialTheme.colors.background,
         elevation = FloatingActionButtonDefaults.elevation(),
-        modifier = Modifier.size(24.dp)
+        modifier = Modifier.size(36.dp)
     ) {
         // Gear icon
         Icon(
             Icons.Rounded.Settings,
             contentDescription = stringResource(id = R.string.settings_complication_id),
             tint = MaterialTheme.colors.onBackground,
-            modifier = Modifier.size(18.dp)
+            modifier = Modifier.size(30.dp)
         )
     }
 }

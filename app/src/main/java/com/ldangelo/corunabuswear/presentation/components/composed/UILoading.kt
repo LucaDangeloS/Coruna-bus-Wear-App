@@ -89,20 +89,20 @@ fun UpdateUILoading(loadingText: String? = null) {
                     textAlign = TextAlign.Center,
                 )
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .align(Alignment.CenterHorizontally),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                GearButton(onClick = {
-                    runBlocking {
-                        launch(Dispatchers.IO) {
-                            getNodes(ContextHolder.getApplicationContext())
-                        }
-                    }
-                })
-            }
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .align(Alignment.CenterHorizontally),
+//                contentAlignment = Alignment.BottomCenter,
+//            ) {
+//                GearButton(onClick = {
+//                    runBlocking {
+//                        launch(Dispatchers.IO) {
+//                            getNodes(ContextHolder.getApplicationContext())
+//                        }
+//                    }
+//                })
+//            }
         }
     }
 }
