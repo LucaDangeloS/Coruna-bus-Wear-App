@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
@@ -42,7 +41,7 @@ import kotlin.math.max
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BusStopPage(stop: BusStop, pagerState: PagerState) {
+fun BusStopPage(stop: BusStop) {
     val columnPadding = PaddingValues(
         top = 6.dp,
         bottom = 0.dp,
@@ -63,7 +62,7 @@ fun BusStopPage(stop: BusStop, pagerState: PagerState) {
             ,
             contentAlignment = Alignment.TopCenter
         ) {
-            BusListHeader(stop, scrollState, pagerState)
+            BusListHeader(stop, scrollState)
             //Last updated Text (some timer from when this function is called?) (Add in the pull refresh)
             //https://developer.android.com/reference/kotlin/androidx/compose/material/pullrefresh/package-summary
             // Add alternative implementation for square watches?
@@ -103,7 +102,7 @@ fun BusStopPage(stop: BusStop, pagerState: PagerState) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BusListHeader(stop: BusStop, scrollState: ScalingLazyListState, pagerState: PagerState) {
+fun BusListHeader(stop: BusStop, scrollState: ScalingLazyListState) {
     val redRectHeight = 62.dp
     val stopNameRectHeight = 38.dp
     val stopNameRectWidth = 0.58f

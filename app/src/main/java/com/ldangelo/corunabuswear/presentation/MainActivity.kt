@@ -13,76 +13,30 @@ import android.os.Bundle
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.displayCutoutPadding
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PageSize
-import androidx.compose.foundation.pager.PagerDefaults
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.rotary.onRotaryScrollEvent
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.ambient.AmbientLifecycleObserver
-import androidx.wear.compose.material.HorizontalPageIndicator
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PageIndicatorState
 import com.ldangelo.corunabuswear.presentation.theme.CoruñaBusWearTheme
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
 import com.ldangelo.corunabuswear.data.ApiConstants.BUS_API_FETCH_TIME
 import com.ldangelo.corunabuswear.data.ContextHolder.setApplicationContext
-import com.ldangelo.corunabuswear.data.local.clearAllStoredBusData
-import com.ldangelo.corunabuswear.data.local.saveBusConnection
-import com.ldangelo.corunabuswear.data.local.saveBusLine
-import com.ldangelo.corunabuswear.data.local.saveBusStop
-import com.ldangelo.corunabuswear.data.local.saveLog
 import com.ldangelo.corunabuswear.data.models.BusStop
 import com.ldangelo.corunabuswear.data.providers.BusProvider
-import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchBuses
 import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchStops
 import com.ldangelo.corunabuswear.data.providers.LocationProvider.startRegularLocationUpdates
-import com.ldangelo.corunabuswear.presentation.components.BusStopPage
-import com.ldangelo.corunabuswear.presentation.components.StopsPage
-import com.ldangelo.corunabuswear.presentation.theme.wearColorPalette
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import com.ldangelo.corunabuswear.data.AppConstants
+import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchBuses
+import com.ldangelo.corunabuswear.data.providers.retryUpdateDefinitions
+import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUILoading
+import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUIError
+import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUIWithBuses
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.koin.android.BuildConfig
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
@@ -90,7 +44,7 @@ import java.util.concurrent.TimeUnit
 
 
 class MainActivity : FragmentActivity() {
-    private var definitionsUpdated = false
+    var definitionsUpdated = false
     private lateinit var locationListener: LocationCallback
     private var executor = Executors.newSingleThreadScheduledExecutor()
     private var busTaskScheduler: ScheduledFuture<*>? = null
@@ -117,27 +71,12 @@ class MainActivity : FragmentActivity() {
         }
     }
     private val ambientObserver = AmbientLifecycleObserver(this, ambientCallback)
-//    private lateinit var ambientController: AmbientModeSupport.AmbientController
-
+    // private lateinit var ambientController: AmbientModeSupport.AmbientController
     // Ambient functionality, that for some reason... doesn't work in my watch
-//    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback {
-//        val ambientCallback = object : AmbientModeSupport.AmbientCallback() {
-//            override fun onEnterAmbient(ambientDetails: Bundle?) {
-//                println("ENTER AMBIENT")
-//            }
-//
-//            override fun onExitAmbient() {
-//                println("EXIT AMBIENT")
-//            }
-//        }
-//        return ambientCallback
-//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setApplicationContext(this)
-//        ambientController = AmbientModeSupport.attach(this)
-//        ambientController.setAutoResumeEnabled(true)
         lifecycle.addObserver(ambientObserver)
 
         // Set vibrator service
@@ -149,8 +88,8 @@ class MainActivity : FragmentActivity() {
             getSystemService(VIBRATOR_SERVICE) as Vibrator
         }
 
-        // UPdate UI to loading state
-        updateUILoading("Obteniendo localización...")
+        // Update UI to loading state
+        displayContent { UpdateUILoading("Obteniendo localización...") }
 
         // create location listener callback
         locationListener = object : LocationCallback() {
@@ -161,12 +100,14 @@ class MainActivity : FragmentActivity() {
                     intArrayOf(30, 0, 30),
                     -1
                 )
-                updateUILoading("Obteniendo paradas...")
+                if (busStops.isEmpty()) {
+                    displayContent { UpdateUILoading("Obteniendo paradas...") }
+                }
                 // Handle location updates here
                 val location = locationResult.lastLocation
                 if (location != null) {
                     vibrator?.vibrate(vibrationEffect)
-                    updateUIWithStops(location)
+                    updateUIWithLocation(location)
                 } else {
                     Log.d("DEBUG_TAG", "Location is null")
                 }
@@ -185,76 +126,39 @@ class MainActivity : FragmentActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (grantResults.isEmpty()) {
             Log.d("DEBUG_TAG", "Request cancelled")
-            updateUIError("Permiso de localización no concedido")
+            displayContent{ UpdateUIError("Permiso de localización no concedido") }
             return
         } else {
             for (result in grantResults) {
                 if (result != PERMISSION_GRANTED) {
                     Log.d("DEBUG_TAG", "Permission not granted")
-                    updateUIError("Permiso de localización no concedido")
+                    displayContent{ UpdateUIError("Permiso de localización no concedido") }
                     return
                 }
             }
         }
     }
 
-    private suspend fun <T> retryUpdateDefinitions(function: suspend () -> T, context: Context): T {
-        try {
-            return function()
-        } catch (e: BusProvider.UnknownDataException) {
-            if (definitionsUpdated) {
-                // Store in a log file
-                saveLog(context, e.toString())
-                Log.d("ERROR_TAG", e.toString())
-                throw e
-            }
-            definitionsUpdated = true
-            updateUILoading("Actualizando índice...")
-            Log.d("DEBUG_TAG", "Updating Bus definitions")
-            val (stops, lines, connections) = BusProvider.fetchStopsLinesData()
-            clearAllStoredBusData(context)
-            stops.forEach { busStop ->
-                saveBusStop(context, busStop.id.toString(), busStop)
-            }
-            lines.forEach { busLine ->
-                saveBusLine(context, busLine.id.toString(), busLine)
-            }
-            connections.forEach { busLine ->
-                saveBusConnection(context, busLine.id.toString(), busLine)
-            }
-            Log.d("DEBUG_TAG", "Updated!")
-        }
-        return function()
-    }
-
-    private fun startRegularBusUpdates() {
+    private fun startRegularBusUpdates(busStops: List<BusStop>, initialDelay: Long = 0) {
         Log.d("DEBUG_TAG", "Starting regular bus updates")
         busTaskScheduler = executor.scheduleAtFixedRate({
-            updateUIWithBuses()
-        }, 0, BUS_API_FETCH_TIME, TimeUnit.MILLISECONDS)
-    }
-
-    private fun updateUIError(text: String, realError: String = "") {
-        if (BuildConfig.DEBUG) {
-            displayContent {
-                WearApp(text + "\n" + realError)
+            lifecycleScope.launch(Dispatchers.IO) {
+                for (stop in busStops) {
+                    try {
+                        retryUpdateDefinitions ({
+                            stop.updateBuses(fetchBuses(stop.id))
+                        }, this@MainActivity)
+                    } catch (e: BusProvider.TooManyRequestsException) {
+                        // TODO: Append to list of failed fetches
+                        continue
+                    }
+//                    stop.updateBuses(mockBusApi(this@MainActivity))
+                }
             }
-        } else {
-            displayContent {
-                WearApp(text)
-            }
-        }
-
+        }, initialDelay, BUS_API_FETCH_TIME * busStops.size, TimeUnit.MILLISECONDS)
     }
 
-    // Later switch to changing to first tab
-    private fun updateUINoStops() {
-        displayContent {
-            WearApp("No hay paradas cercanas")
-        }
-    }
-
-    private fun updateUIWithStops(location: Location) {
+    private fun updateUIWithLocation(location: Location) {
         Log.d("DEBUG_TAG", "Update UI method called")
         busTaskScheduler?.cancel(true)
         val radius = applicationContext.getSharedPreferences(AppConstants.SETTINGS_PREF, Context.MODE_PRIVATE).getInt(
@@ -265,119 +169,25 @@ class MainActivity : FragmentActivity() {
             AppConstants.STOPS_FETCH_KEY,
             AppConstants.DEFAULT_STOPS_FETCH
         )
+
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 busStops = retryUpdateDefinitions ({
                     fetchStops(location.latitude, location.longitude, radius, limit)
                 }, this@MainActivity)
-                startRegularBusUpdates()
+                displayContent{ UpdateUIWithBuses(busStops, this@MainActivity, vibrator, onBackPressedDispatcher) }
+                startRegularBusUpdates(busStops)
             } catch (e: BusProvider.TooManyRequestsException) {
                 Log.d("ERROR_TAG", "Too many requests: $e")
-                withContext(Dispatchers.Main) {
-                    updateUIError("Demasiadas peticiones, espera un poco")
+                if (busTaskScheduler?.isCancelled == true) {
+                    withContext(Dispatchers.Main) {
+                        displayContent { UpdateUIError("Demasiadas peticiones, espera un poco") }
+                    }
                 }
             } catch (e: IOException) {
                 Log.d("ERROR_TAG", "Error fetching stops: $e")
                 withContext(Dispatchers.Main) {
-                    updateUIError("Error al obtener paradas", e.toString())
-                }
-            }
-        }
-    }
-
-    private fun updateUIWithBuses() {
-        Log.d("DEBUG_TAG", "Update UI with buses method called")
-        if (busStops.isEmpty()) {
-            updateUINoStops()
-            return
-        }
-        try {
-            // call the API to get the buses in the stops
-            lifecycleScope.launch(Dispatchers.IO) {
-                for (stop in busStops) {
-                    retryUpdateDefinitions ({
-                        stop.updateBuses(fetchBuses(stop.id))
-                    }, this@MainActivity)
-//                    stop.updateBuses(mockBusApi(this@MainActivity))
-                }
-                withContext(Dispatchers.Main) {
-                    displayContent {
-                        WearApp(busStops)
-                    }
-                }
-            }
-        } catch (e: IOException) {
-            Log.d("ERROR_TAG", "Error fetching buses: $e")
-            updateUIError("Error al obtener buses", e.toString())
-        }
-    }
-
-    private fun updateUILoading(loadingText: String? = null) {
-        displayContent {
-            val endText = ""
-            Scaffold (
-                timeText = {
-                    TimeText(
-                        modifier = Modifier.padding(2.dp),
-                        // reduce font
-                        timeTextStyle =
-                        TextStyle(
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colors.onSecondary,
-                        ),
-//                        endLinearContent = {
-//                            Text(
-//                                text = endText,y
-//                                color = MaterialTheme.colors.onBackground
-//                            )y
-//                        },
-//                        endCurvedContent = {
-//                            basicCurvedText(
-//                                endText,
-//                                style = {
-//                                    CurvedTextStyle(
-//                                        fontSize = 12.sp,
-//                                        color = MaterialTheme.colors.onSecondary,
-//                                    )
-//                                },
-//                            )
-//                        }
-                    )
-                },
-                vignette = {
-                    Vignette(vignettePosition = VignettePosition.TopAndBottom)
-                }
-            ) {
-            Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colors.background),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .align(Alignment.CenterHorizontally)
-                        ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .displayCutoutPadding(),
-                            indicatorColor = wearColorPalette.primary,
-                            trackColor = MaterialTheme.colors.onBackground.copy(alpha = 0.3f),
-                            strokeWidth = 6.dp
-                        )
-                        Text(
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .padding(6.dp),
-                            text = loadingText ?: "",
-                            color = MaterialTheme.colors.onBackground,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
+                    displayContent { UpdateUIError("Error al obtener paradas", e.toString()) }
                 }
             }
         }
@@ -389,153 +199,6 @@ class MainActivity : FragmentActivity() {
                 composable()
             }
         }
-    }
-    @Composable
-    fun WearApp(text: String) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colors.background)
-        ) {
-            val scrollState = rememberScrollState()
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                ShowText(text)
-            }
-        }
-    }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    @Composable
-    fun WearApp(busStops: List<BusStop>) {
-        val currentPageIndex by remember { mutableStateOf(0) }
-        val focusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) {
-            focusRequester.requestFocus()
-        }
-        val maxPages = busStops.size + 1
-        val pagerState = rememberPagerState(
-            initialPage = currentPageIndex,
-            pageCount = { maxPages }
-        )
-        val pageIndicatorState: PageIndicatorState = remember {
-            object : PageIndicatorState {
-                override val pageOffset: Float
-                    get() = 0f
-                override val selectedPage: Int
-                    get() = pagerState.currentPage
-                override val pageCount: Int
-                    get() = maxPages
-            }
-        }
-        val animationScope = rememberCoroutineScope()
-        val vibrationEffect = android.os.VibrationEffect.createOneShot(50, 20)
-        val backCallback = remember {
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    // if page is not 0, go to page 0
-                    if (pagerState.currentPage != 0) {
-                        animationScope.launch {
-                            pagerState.animateScrollToPage(0)
-                        }
-                        vibrator?.vibrate(vibrationEffect)
-                    } else {
-                        // else, exit app
-                        finish()
-                    }
-                }
-            }
-        }
-        onBackPressedDispatcher.addCallback(backCallback)
-
-        fun onPageScrollByScroll(pixels: Float) {
-            val currentPage = pagerState.currentPage
-            val nextPage = pixels / 20
-            val truncatedNextPage = if (nextPage > 1) 1 else if (nextPage < -1) -1 else 0
-            if (truncatedNextPage == 0) {
-                return
-            }
-            if (currentPage + truncatedNextPage < 0 || currentPage + truncatedNextPage >= maxPages) {
-                return
-            }
-            animationScope.launch {
-                pagerState.animateScrollToPage(currentPage + truncatedNextPage)
-            }
-            vibrator?.vibrate(vibrationEffect)
-        }
-
-        Scaffold (
-            pageIndicator = {
-                HorizontalPageIndicator(
-                    pageIndicatorState = pageIndicatorState,
-                    selectedColor = MaterialTheme.colors.primary,
-                    unselectedColor = MaterialTheme.colors.onSecondary.copy(alpha = 0.6f),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp)
-                )
-            },
-            timeText = {
-                TimeText(
-                    timeTextStyle = TextStyle(
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colors.onSecondary,
-                    ),
-
-                )
-            },
-            vignette = {
-                Vignette(vignettePosition = VignettePosition.TopAndBottom)
-            }
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colors.background)
-                    .padding(bottom = 3.dp)
-                    .onRotaryScrollEvent {
-                        onPageScrollByScroll(it.horizontalScrollPixels)
-                        true
-                    }
-                    .focusRequester(focusRequester)
-                    .focusable(),
-                pageSpacing = 0.dp,
-                userScrollEnabled = true,
-                reverseLayout = false,
-                beyondBoundsPageCount = 0,
-                pageSize = PageSize.Fill,
-                flingBehavior = PagerDefaults.flingBehavior(state = pagerState),
-                key = null,
-                pageNestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
-                    pagerState,
-                    Orientation.Horizontal
-                ),
-                pageContent = {
-                    if (it == 0) {
-                        StopsPage(busStops, pagerState, animationScope)
-                    } else {
-                        BusStopPage(busStops[it - 1], pagerState)
-                    }
-                }
-            )
-        }
-    }
-
-    @Composable
-    fun ShowText(text: String) {
-        Text(
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                color = wearColorPalette.primary,
-                text = text
-        )
     }
 }
 

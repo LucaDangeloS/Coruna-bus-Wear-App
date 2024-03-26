@@ -5,12 +5,18 @@ import android.util.Log
 import androidx.compose.ui.graphics.Color as Colorx
 import com.ldangelo.corunabuswear.data.ApiConstants.BUS_API_ROOT
 import com.ldangelo.corunabuswear.data.ContextHolder.getApplicationContext
+import com.ldangelo.corunabuswear.data.local.clearAllStoredBusData
 import com.ldangelo.corunabuswear.data.local.getBusConnection
 import com.ldangelo.corunabuswear.data.local.getBusLine
 import com.ldangelo.corunabuswear.data.local.getBusStop
+import com.ldangelo.corunabuswear.data.local.saveBusConnection
+import com.ldangelo.corunabuswear.data.local.saveBusLine
+import com.ldangelo.corunabuswear.data.local.saveBusStop
+import com.ldangelo.corunabuswear.data.local.saveLog
 import com.ldangelo.corunabuswear.data.models.Bus
 import com.ldangelo.corunabuswear.data.models.BusLine
 import com.ldangelo.corunabuswear.data.models.BusStop
+import com.ldangelo.corunabuswear.presentation.MainActivity
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
@@ -153,7 +159,7 @@ object BusProvider {
         busList.add(Bus(3, busLine3A!!, 10))
         busList.add(Bus(3, busLine3A, 30))
         busList.add(Bus(4, busLine3!!, -1))
-        busList.add(Bus(4, busLine3!!, 4))
+        busList.add(Bus(4, busLine3, 4))
         print("Mocking bus api took ${endTime.second - initialTime.second} seconds")
         return busList
     }
@@ -244,3 +250,36 @@ object BusProvider {
     class BusLineIsConnection(message: String) : Exception(message)
 }
 
+suspend fun <T> retryUpdateDefinitions(function: suspend () -> T, context: MainActivity): T {
+    try {
+        return function()
+    } catch (e: BusProvider.UnknownDataException) {
+        if (context.definitionsUpdated) {
+            // Store in a log file
+            saveLog(context, e.toString())
+            Log.d("ERROR_TAG", e.toString())
+            throw e
+        }
+        context.definitionsUpdated = true
+//        displayContent{
+//            UpdateUILoading("Actualizando índice...")
+//        }
+        Log.d("DEBUG_TAG", "Updating Bus definitions")
+        val (stops, lines, connections) = BusProvider.fetchStopsLinesData()
+        clearAllStoredBusData(context)
+        stops.forEach { busStop ->
+            saveBusStop(context, busStop.id.toString(), busStop)
+        }
+        lines.forEach { busLine ->
+            saveBusLine(context, busLine.id.toString(), busLine)
+        }
+        connections.forEach { busLine ->
+            saveBusConnection(context, busLine.id.toString(), busLine)
+        }
+        Log.d("DEBUG_TAG", "Updated!")
+    } catch (e: BusProvider.TooManyRequestsException) {
+        Log.d("ERROR_TAG", "Too many requests: $e")
+        throw e
+    }
+    return function()
+}
