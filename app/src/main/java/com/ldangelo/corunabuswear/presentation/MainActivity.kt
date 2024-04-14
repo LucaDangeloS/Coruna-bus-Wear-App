@@ -28,6 +28,7 @@ import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchStops
 import com.ldangelo.corunabuswear.data.providers.LocationProvider.startRegularLocationUpdates
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
+import com.ldangelo.corunabuswear.data.ApiConstants.MINUTE_API_LIMIT
 import com.ldangelo.corunabuswear.data.AppConstants
 import com.ldangelo.corunabuswear.data.ContextHolder.setLifecycleScope
 import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchBuses
@@ -164,14 +165,14 @@ class MainActivity : FragmentActivity() {
                     try {
                         retryUpdateDefinitions ({
                             stop.updateBuses(fetchBuses(stop.id))
+                            Thread.sleep(500)
                         }, this@MainActivity)
                     } catch (e: BusProvider.TooManyRequestsException) {
-                        // TODO: Append to list of failed fetches
                         continue
                     }
                 }
             }
-        }, initialDelay, BUS_API_FETCH_TIME * busStops.size, TimeUnit.MILLISECONDS)
+        }, initialDelay, BUS_API_FETCH_TIME * (busStops.size / MINUTE_API_LIMIT), TimeUnit.MILLISECONDS)
     }
 
     private fun updateUIWithLocation(location: Location) {
