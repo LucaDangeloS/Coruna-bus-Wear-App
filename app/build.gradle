@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.ldangelo.coruabuswear'
+    namespace 'com.ldangelo.corunabuswear'
     compileSdk 34
 
     defaultConfig {
@@ -16,7 +16,6 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
-
     }
 
     buildTypes {

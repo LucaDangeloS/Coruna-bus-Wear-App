@@ -40,7 +40,7 @@ import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.wearable.Wearable
-import com.ldangelo.coruabuswear.R
+import com.ldangelo.corunabuswear.R
 import com.ldangelo.corunabuswear.data.ContextHolder
 import com.ldangelo.corunabuswear.data.companion.MessagePaths.DEPLOY_SETTINGS
 import kotlinx.coroutines.Dispatchers

@@ -31,6 +31,7 @@ import com.google.android.gms.location.LocationResult
 import com.ldangelo.corunabuswear.data.ApiConstants.MINUTE_API_LIMIT
 import com.ldangelo.corunabuswear.data.AppConstants
 import com.ldangelo.corunabuswear.data.ContextHolder.setLifecycleScope
+import com.ldangelo.corunabuswear.data.local.saveLog
 import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchBuses
 import com.ldangelo.corunabuswear.data.providers.BusProvider.mockBusApi
 import com.ldangelo.corunabuswear.data.providers.retryUpdateDefinitions
