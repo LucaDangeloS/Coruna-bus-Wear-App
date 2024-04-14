@@ -254,12 +254,13 @@ suspend fun <T> retryUpdateDefinitions(function: suspend () -> T, context: MainA
     try {
         return function()
     } catch (e: BusProvider.UnknownDataException) {
-        if (context.definitionsUpdated) {
-            // Store in a log file
-            saveLog(context, e.toString())
-            Log.d("ERROR_TAG", e.toString())
-            throw e
-        }
+        saveLog(context, e.toString())
+//        if (context.definitionsUpdated) {
+//            // Store in a log file
+//            saveLog(context, e.toString())
+//            Log.d("ERROR_TAG", e.toString())
+//            throw e
+//        }
         context.definitionsUpdated = true
 //        displayContent{
 //            UpdateUILoading("Actualizando índice...")
