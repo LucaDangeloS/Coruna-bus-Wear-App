@@ -141,13 +141,13 @@ class MainActivity : FragmentActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (grantResults.isEmpty()) {
             Log.d("DEBUG_TAG", "Request cancelled")
-            displayContent{ UpdateUIError("Permiso de localización no concedido") }
+            displayContent { UpdateUIError("Permiso de localización no concedido") }
             return
         } else {
             for (result in grantResults) {
                 if (result != PERMISSION_GRANTED) {
                     Log.d("DEBUG_TAG", "Permission not granted")
-                    displayContent{ UpdateUIError("Permiso de localización no concedido") }
+                    displayContent { UpdateUIError("Permiso de localización no concedido") }
                     return
                 }
             }
@@ -193,7 +193,7 @@ class MainActivity : FragmentActivity() {
                 busStops = retryUpdateDefinitions ({
                     fetchStops(location.latitude, location.longitude, radius, limit)
                 }, this@MainActivity)
-                displayContent{ UpdateUIWithBuses(busStops, this@MainActivity, vibrator, onBackPressedDispatcher) }
+                displayContent { UpdateUIWithBuses(busStops, this@MainActivity, vibrator, onBackPressedDispatcher) }
                 startRegularBusUpdates(busStops)
             } catch (e: BusProvider.TooManyRequestsException) {
                 Log.d("ERROR_TAG", "Too many requests: $e")
@@ -204,6 +204,7 @@ class MainActivity : FragmentActivity() {
                 }
             } catch (e: IOException) {
                 Log.d("ERROR_TAG", "Error fetching stops: $e")
+                saveLog(this@MainActivity, "Error fetching stops: $e")
                 withContext(Dispatchers.Main) {
                     displayContent { UpdateUIError("Error al obtener paradas", e.toString()) }
                 }
