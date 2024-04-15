@@ -22,12 +22,11 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import com.ldangelo.corunabuswear.data.ContextHolder
+import com.ldangelo.corunabuswear.data.companion.openSettings
 import com.ldangelo.corunabuswear.presentation.components.GearButton
-import com.ldangelo.corunabuswear.presentation.components.getNodes
 import com.ldangelo.corunabuswear.presentation.theme.wearColorPalette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.*
 
 @Composable
 fun UpdateUILoading(loadingText: String? = null) {
@@ -88,21 +87,20 @@ fun UpdateUILoading(loadingText: String? = null) {
                     color = MaterialTheme.colors.onBackground,
                     textAlign = TextAlign.Center,
                 )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(0.dp, 0.dp, 0.dp, 14.dp),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    GearButton(onClick = {
+                        val context = ContextHolder.getApplicationContext()
+                        ContextHolder.getLifecycleScope().launch(Dispatchers.IO) {
+                            openSettings(context)
+                        }
+                    })
+                }
             }
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .align(Alignment.CenterHorizontally),
-//                contentAlignment = Alignment.BottomCenter,
-//            ) {
-//                GearButton(onClick = {
-//                    runBlocking {
-//                        launch(Dispatchers.IO) {
-//                            getNodes(ContextHolder.getApplicationContext())
-//                        }
-//                    }
-//                })
-//            }
         }
     }
 }

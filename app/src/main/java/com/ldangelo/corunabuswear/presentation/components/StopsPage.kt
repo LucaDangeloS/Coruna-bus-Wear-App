@@ -1,7 +1,5 @@
 package com.ldangelo.corunabuswear.presentation.components
 
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -38,13 +36,9 @@ import kotlinx.coroutines.launch
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
-import com.google.android.gms.tasks.Task
-import com.google.android.gms.wearable.Wearable
-import com.ldangelo.corunabuswear.R
 import com.ldangelo.corunabuswear.data.ContextHolder
-import com.ldangelo.corunabuswear.data.companion.MessagePaths.DEPLOY_SETTINGS
+import com.ldangelo.corunabuswear.data.companion.openSettings
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.invoke
 
 // receives a list of stops
 @OptIn(ExperimentalFoundationApi::class)
@@ -95,21 +89,7 @@ fun StopsPage(stops: List<BusStop>, pagerState: PagerState, animationScope: Coro
                     GearButton(onClick = {
                         val context = ContextHolder.getApplicationContext()
                         ContextHolder.getLifecycleScope().launch(Dispatchers.IO) {
-                            getNodes(context).first().also {
-                                val sendTask: Task<*> = Wearable.getMessageClient(context).sendMessage(
-                                    it,
-                                    DEPLOY_SETTINGS,
-                                    "".toByteArray()
-                                ).apply {
-                                    addOnSuccessListener {
-                                        Toast.makeText(context, R.string.settings_open, Toast.LENGTH_SHORT).show()
-                                    }
-                                    addOnFailureListener {
-                                        Toast.makeText(context, R.string.unknown_error, Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-
-                            }
+                            openSettings(context)
                         }
                     })
                 }
