@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.wear.ambient.AmbientLifecycleObserver
 import com.ldangelo.corunabuswear.presentation.theme.CoruñaBusWearTheme
 import com.ldangelo.corunabuswear.data.ApiConstants.BUS_API_FETCH_TIME
 import com.ldangelo.corunabuswear.data.ContextHolder.setApplicationContext
@@ -35,6 +34,8 @@ import com.ldangelo.corunabuswear.data.local.saveLog
 import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchBuses
 import com.ldangelo.corunabuswear.data.providers.BusProvider.mockBusApi
 import com.ldangelo.corunabuswear.data.providers.retryUpdateDefinitions
+import com.ldangelo.corunabuswear.data.viewmodel.BusStopViewModel
+import com.ldangelo.corunabuswear.data.viewmodel.BusStopsListViewModel
 import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUILoading
 import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUIError
 import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUIWithBuses
@@ -45,6 +46,7 @@ import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import kotlin.math.max
 
 
 class MainActivity : FragmentActivity() {
@@ -52,7 +54,7 @@ class MainActivity : FragmentActivity() {
     private lateinit var locationListener: LocationCallback
     private var executor = Executors.newSingleThreadScheduledExecutor()
     private var busTaskScheduler: ScheduledFuture<*>? = null
-    private var busStops: List<BusStop> = mutableListOf()
+    private var busStops: BusStopsListViewModel = BusStopsListViewModel()
     private var vibrator: Vibrator? = null
     // // // // // Mocking // // // // //
     private var mockLocation = false
@@ -66,7 +68,6 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         setApplicationContext(this)
         setLifecycleScope(lifecycleScope)
-        lifecycle.addObserver(ambientObserver)
 
         // Set vibrator service
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -89,14 +90,14 @@ class MainActivity : FragmentActivity() {
                     intArrayOf(30, 0, 30),
                     -1
                 )
-                if (busStops.isEmpty()) {
+                if (busStops.busStops.value.isNullOrEmpty()) {
                     displayContent { UpdateUILoading("Obteniendo paradas...") }
                 }
                 // Handle location updates here
                 val location = locationResult.lastLocation
                 if (location != null) {
                     vibrator?.vibrate(vibrationEffect)
-                    updateUIWithLocation(location)
+                    updateLocation(location)
                 } else {
                     Log.d("DEBUG_TAG", "Location is null")
                 }
@@ -123,13 +124,6 @@ class MainActivity : FragmentActivity() {
         }
         // // // // // // // // // // // // //
         // Start location updates and attach listener
-        if (mockLocation) {
-            val location = Location("mock")
-            location.latitude = mockLocationCoordinates.first
-            location.longitude = mockLocationCoordinates.second
-            updateUIWithLocation(location)
-            return
-        }
         startRegularLocationUpdates(locationListener, this@MainActivity)
     }
 
@@ -154,30 +148,48 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun startRegularBusUpdates(busStops: List<BusStop>, initialDelay: Long = 0) {
+    private fun startRegularBusUpdates(busStopsListViewModel: BusStopsListViewModel, initialDelay: Long = 0) {
         Log.d("DEBUG_TAG", "Starting regular bus updates")
+        busTaskScheduler?.cancel(true)
+        val busStops: List<BusStopViewModel> = busStopsListViewModel.busStops.value ?: emptyList()
+        val delay = (BUS_API_FETCH_TIME * max((busStops.size.toFloat() / MINUTE_API_LIMIT.toFloat()), 1F)).toLong()
+
         busTaskScheduler = executor.scheduleAtFixedRate({
             lifecycleScope.launch(Dispatchers.IO) {
+
+                Log.d("DEBUG_TAG", "Updating buses")
                 for (stop in busStops) {
+                    // // // // // Mocking // // // // //
                     if (mockApi) {
-                        stop.updateBuses(mockBusApi(this@MainActivity))
+                        val buses = mockBusApi(this@MainActivity)
+                        withContext(Dispatchers.Main) {
+                            stop.updateBuses(buses)
+                        }
                         continue
                     }
+                    // // // // // // // // // // // // //
                     try {
-                        retryUpdateDefinitions ({
-                            stop.updateBuses(fetchBuses(stop.id))
+                        val buses = retryUpdateDefinitions ({
                             Thread.sleep(500)
-                        }, this@MainActivity)
+                            fetchBuses(stop.id)
+                        }, this@MainActivity,
+                        {
+                            displayContent {
+                                UpdateUILoading("Actualizando índice...")
+                            }
+                        })
+                        withContext(Dispatchers.Main) {
+                            stop.updateBuses(buses)
+                        }
                     } catch (e: BusProvider.TooManyRequestsException) {
                         continue
                     }
                 }
             }
-        }, initialDelay, BUS_API_FETCH_TIME * (busStops.size / MINUTE_API_LIMIT), TimeUnit.MILLISECONDS)
+        }, initialDelay, delay, TimeUnit.MILLISECONDS)
     }
 
-    private fun updateUIWithLocation(location: Location) {
-        Log.d("DEBUG_TAG", "Update UI method called")
+    private fun updateLocation(location: Location) {
         busTaskScheduler?.cancel(true)
         val radius = applicationContext.getSharedPreferences(AppConstants.SETTINGS_PREF, Context.MODE_PRIVATE).getInt(
             AppConstants.STOPS_RADIUS_KEY,
@@ -190,10 +202,19 @@ class MainActivity : FragmentActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                busStops = retryUpdateDefinitions ({
+                val tmpStops = retryUpdateDefinitions ({
                     fetchStops(location.latitude, location.longitude, radius, limit)
-                }, this@MainActivity)
-                displayContent { UpdateUIWithBuses(busStops, this@MainActivity, vibrator, onBackPressedDispatcher) }
+                }, this@MainActivity,
+                {
+                    displayContent {
+                        UpdateUILoading("Actualizando índice...")
+                    }
+                })
+                // assign to viewmodel in Main thread
+                withContext(Dispatchers.Main) {
+                    busStops.updateBusStops(tmpStops)
+                }
+                displayContent { UpdateUIWithBuses(busStops, vibrator, onBackPressedDispatcher) }
                 startRegularBusUpdates(busStops)
             } catch (e: BusProvider.TooManyRequestsException) {
                 Log.d("ERROR_TAG", "Too many requests: $e")

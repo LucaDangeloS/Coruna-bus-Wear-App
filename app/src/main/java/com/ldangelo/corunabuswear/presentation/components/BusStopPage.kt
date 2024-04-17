@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -35,10 +36,11 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
+import com.ldangelo.corunabuswear.data.viewmodel.BusStopViewModel
 import kotlin.math.max
 
 @Composable
-fun BusStopPage(stop: BusStop) {
+fun BusStopPage(stop: BusStopViewModel) {
     val columnPadding = PaddingValues(
         top = 6.dp,
         bottom = 0.dp,
@@ -46,6 +48,7 @@ fun BusStopPage(stop: BusStop) {
         end = 10.dp
     )
     val scrollState = ScalingLazyListState()
+    val buses: List<Bus> by stop.buses.buses.observeAsState(emptyList())
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -72,7 +75,7 @@ fun BusStopPage(stop: BusStop) {
                 anchorType = ScalingLazyListAnchorType.ItemStart,
                 contentPadding = columnPadding,
             ) {
-                if (stop.buses.isEmpty()) {
+                if (buses.isEmpty()) {
                     item {
                         Text(
                             text = "No hay buses :(",
@@ -86,7 +89,7 @@ fun BusStopPage(stop: BusStop) {
                         )
                     }
                 } else {
-                    for (bus in stop.buses) {
+                    for (bus in buses) {
                         item {
                             BusListElement(bus)
                         }
@@ -98,7 +101,7 @@ fun BusStopPage(stop: BusStop) {
 }
 
 @Composable
-fun BusListHeader(stop: BusStop, scrollState: ScalingLazyListState) {
+fun BusListHeader(stop: BusStopViewModel, scrollState: ScalingLazyListState) {
     val redRectHeight = 62.dp
     val stopNameRectHeight = 38.dp
     val stopNameRectWidth = 0.58f
@@ -151,7 +154,7 @@ fun BusListHeader(stop: BusStop, scrollState: ScalingLazyListState) {
                     .padding(end = 3.dp, bottom = 2.dp)
             ) {
                 Text(
-                    text = "${stop.distance} m",
+                    text = "${stop.distance.value} m",
                     modifier = Modifier
                         .align(Alignment.BottomEnd),
                     color = MaterialTheme.colors.onSecondary,

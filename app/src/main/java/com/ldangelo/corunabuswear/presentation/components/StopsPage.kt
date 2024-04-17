@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,8 +31,6 @@ import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.CardDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.ldangelo.corunabuswear.data.models.BusLine
-import com.ldangelo.corunabuswear.data.models.BusStop
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
@@ -38,12 +38,15 @@ import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import com.ldangelo.corunabuswear.data.ContextHolder
 import com.ldangelo.corunabuswear.data.companion.openSettings
+import com.ldangelo.corunabuswear.data.models.Bus
+import com.ldangelo.corunabuswear.data.viewmodel.BusStopViewModel
+import com.ldangelo.corunabuswear.data.viewmodel.BusesViewModel
 import kotlinx.coroutines.Dispatchers
 
 // receives a list of stops
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StopsPage(stops: List<BusStop>, pagerState: PagerState, animationScope: CoroutineScope) {
+fun StopsPage(stops: List<BusStopViewModel>, pagerState: PagerState, animationScope: CoroutineScope) {
     val columnPadding = PaddingValues(
         top = 6.dp,
         bottom = 0.dp,
@@ -99,20 +102,17 @@ fun StopsPage(stops: List<BusStop>, pagerState: PagerState, animationScope: Coro
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StopListElement(stop: BusStop, index: Int, pagerState: PagerState, animationScope: CoroutineScope) {
-    val lines = stop.buses.map { it.line }.distinct()
+fun StopListElement(stop: BusStopViewModel, index: Int, pagerState: PagerState, animationScope: CoroutineScope) {
 
     Card (
         onClick =  {
             animationScope.launch {
-                // TODO: Make animation work?
                 pagerState.scrollToPage(index)
             }
         },
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 1.dp, horizontal = 0.dp),
-        // TODO: change background to better gradient
         backgroundPainter = CardDefaults.cardBackgroundPainter(
             startBackgroundColor = MaterialTheme.colors.primary,
             endBackgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.6f),
@@ -137,13 +137,17 @@ fun StopListElement(stop: BusStop, index: Int, pagerState: PagerState, animation
                 fontWeight = FontWeight.W500,
             )
             // add little icons
-            BusStopsIconRow(stop, lines)
+            BusStopsIconRow(stop, stop.buses)
         }
     }
 }
 
 @Composable
-fun BusStopsIconRow(busStop: BusStop, lines: List<BusLine>) {
+fun BusStopsIconRow(busStopViewModel: BusStopViewModel, buses: BusesViewModel) {
+    val obsBuses : List<Bus> by buses.buses.observeAsState(emptyList())
+    val distance : Int by busStopViewModel.distance.observeAsState(9999)
+    val lines = obsBuses.map { it.line }.distinct()
+
     // For each line that stops at this stop, add a little icon that is a rectangle with the color of the line, with the line number inside in white
     // Stack them horizontally
 
@@ -185,7 +189,7 @@ fun BusStopsIconRow(busStop: BusStop, lines: List<BusLine>) {
             }
         }
         Text(
-            text = busStop.distance.toString() + " m",
+            text = "$distance m",
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.Bottom),
