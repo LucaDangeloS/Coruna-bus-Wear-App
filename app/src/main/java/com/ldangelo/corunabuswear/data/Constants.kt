@@ -2,7 +2,7 @@ package com.ldangelo.corunabuswear.data
 
 object ApiConstants {
     const val BUS_API_ROOT = "https://itranvias.com/queryitr_v3.php?"
-    const val BUS_API_FETCH_TIME = 15000L
+    const val BUS_API_FETCH_TIME = 20000L
     const val MINUTE_API_LIMIT = 4
 }
 
