@@ -65,6 +65,7 @@ dependencies {
     implementation "com.google.android.horologist:horologist-compose-tools:$horologist_version"
     implementation "com.google.android.horologist:horologist-tiles:$horologist_version"
     implementation 'androidx.wear.watchface:watchface-complications-data-source-ktx:1.1.1'
+    implementation "androidx.compose.runtime:runtime-livedata:1.6.5"
 
     implementation 'com.google.android.gms:play-services-location:21.0.1'
 
