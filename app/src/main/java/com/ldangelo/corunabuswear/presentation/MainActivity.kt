@@ -21,7 +21,6 @@ import androidx.lifecycle.lifecycleScope
 import com.ldangelo.corunabuswear.presentation.theme.CoruñaBusWearTheme
 import com.ldangelo.corunabuswear.data.ApiConstants.BUS_API_FETCH_TIME
 import com.ldangelo.corunabuswear.data.ContextHolder.setApplicationContext
-import com.ldangelo.corunabuswear.data.models.BusStop
 import com.ldangelo.corunabuswear.data.providers.BusProvider
 import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchStops
 import com.ldangelo.corunabuswear.data.providers.LocationProvider.startRegularLocationUpdates

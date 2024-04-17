@@ -12,7 +12,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import com.ldangelo.corunabuswear.data.models.BusStop
 import com.ldangelo.corunabuswear.data.viewmodel.BusStopViewModel
 import com.ldangelo.corunabuswear.data.viewmodel.BusStopsListViewModel
 import com.ldangelo.corunabuswear.presentation.components.BusStopPage
