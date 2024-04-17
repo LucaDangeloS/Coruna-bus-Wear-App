@@ -54,32 +54,13 @@ class MainActivity : FragmentActivity() {
     private var busTaskScheduler: ScheduledFuture<*>? = null
     private var busStops: List<BusStop> = mutableListOf()
     private var vibrator: Vibrator? = null
-    // mocking
+    // // // // // Mocking // // // // //
     private var mockLocation = false
     private var mockLocationCoordinates = Pair(43.3470, -8.4004)
+    private var mockLocationExecutor = Executors.newSingleThreadScheduledExecutor()
+    private var mockTaskScheduler: ScheduledFuture<*>? = null
     private var mockApi = false
-
-    val ambientCallback = object : AmbientLifecycleObserver.AmbientLifecycleCallback {
-        override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
-            // ... Called when moving from interactive mode into ambient mode.
-            Log.d("DEBUG_TAG", "ENTER AMBIENT")
-        }
-
-        override fun onExitAmbient() {
-            // ... Called when leaving ambient mode, back into interactive mode.
-            Log.d("DEBUG_TAG", "EXIT AMBIENT")
-        }
-
-        override fun onUpdateAmbient() {
-            // ... Called by the system in order to allow the app to periodically
-            // update the display while in ambient mode. Typically the system will
-            // call this every 60 seconds.
-            Log.d("DEBUG_TAG", "UPDATE AMBIENT")
-        }
-    }
-    private val ambientObserver = AmbientLifecycleObserver(this, ambientCallback)
-    // private lateinit var ambientController: AmbientModeSupport.AmbientController
-    // Ambient functionality, that for some reason... doesn't work in my watch
+    // // // // // // // // // // // // //
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -121,7 +102,26 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+        // // // // // Mocking // // // // //
+        if (mockLocation) {
+            val location = Location("mock")
+            location.latitude = mockLocationCoordinates.first
+            location.longitude = mockLocationCoordinates.second
+            updateLocation(location)
 
+            mockTaskScheduler = mockLocationExecutor.scheduleAtFixedRate({
+                val loc = Location("mock")
+                loc.latitude = mockLocationCoordinates.first
+                loc.longitude = mockLocationCoordinates.second
+                // vary it by 0.005% of the value
+                loc.latitude += (Math.random() - 0.5) * 0.005
+                loc.longitude += (Math.random() - 0.5) * 0.005
+                    updateLocation(loc)
+                Log.d("DEBUG_TAG", "Mock location updated to ${loc.latitude}, ${loc.longitude}")
+            }, 10000L, 15000L, TimeUnit.MILLISECONDS)
+            return
+        }
+        // // // // // // // // // // // // //
         // Start location updates and attach listener
         if (mockLocation) {
             val location = Location("mock")

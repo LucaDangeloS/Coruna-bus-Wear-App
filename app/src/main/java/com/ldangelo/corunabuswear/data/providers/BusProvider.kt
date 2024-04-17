@@ -24,6 +24,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.random.Random
 
 private val client = OkHttpClient()
 
@@ -147,19 +148,21 @@ object BusProvider {
         val initialTime = LocalDateTime.now()
         println("Mocking bus api")
         val busList = mutableListOf<Bus>()
-        val busLineBUH = getBusLine<BusLine>(context, "1800")
-        val busLine1A = getBusLine<BusLine>(context, "1900")
-        val busLine11 = getBusLine<BusLine>(context, "1100")
-        val busLine3A = getBusLine<BusLine>(context, "301")
-        val busLine3 = getBusLine<BusLine>(context, "300")
+        val idMappings = mapOf(
+            "1800" to 5,
+            "1900" to 1,
+            "1100" to 2,
+            "301" to 3,
+            "300" to 4
+        )
         val endTime = LocalDateTime.now()
-        busList.add(Bus(5, busLineBUH!!, 15))
-        busList.add(Bus(1, busLine1A!!, 5))
-        busList.add(Bus(2, busLine11!!, 2))
-        busList.add(Bus(3, busLine3A!!, 10))
-        busList.add(Bus(3, busLine3A, 30))
-        busList.add(Bus(4, busLine3!!, -1))
-        busList.add(Bus(4, busLine3, 4))
+
+        // add random buses
+        val n = Random.nextInt(1, 10)
+        for (i in 0 until n) {
+            val busLine = getBusLine<BusLine>(context, idMappings.keys.random())
+            busList.add(Bus(i, busLine!!, Random.nextInt(-1, 30)))
+        }
         print("Mocking bus api took ${endTime.second - initialTime.second} seconds")
         return busList
     }
@@ -250,7 +253,11 @@ object BusProvider {
     class BusLineIsConnection(message: String) : Exception(message)
 }
 
-suspend fun <T> retryUpdateDefinitions(function: suspend () -> T, context: MainActivity): T {
+suspend fun <T> retryUpdateDefinitions(
+    function: suspend () -> T,
+    context: MainActivity,
+    onRetryDefinitions: () -> Unit = {}
+): T {
     try {
         return function()
     } catch (e: BusProvider.UnknownDataException) {
@@ -262,6 +269,7 @@ suspend fun <T> retryUpdateDefinitions(function: suspend () -> T, context: MainA
 //            throw e
 //        }
         context.definitionsUpdated = true
+        onRetryDefinitions()
 //        displayContent{
 //            UpdateUILoading("Actualizando índice...")
 //        }
