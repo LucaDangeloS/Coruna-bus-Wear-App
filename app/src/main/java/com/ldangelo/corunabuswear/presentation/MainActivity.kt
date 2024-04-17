@@ -104,11 +104,6 @@ class MainActivity : FragmentActivity() {
         }
         // // // // // Mocking // // // // //
         if (mockLocation) {
-            val location = Location("mock")
-            location.latitude = mockLocationCoordinates.first
-            location.longitude = mockLocationCoordinates.second
-            updateLocation(location)
-
             mockTaskScheduler = mockLocationExecutor.scheduleAtFixedRate({
                 val loc = Location("mock")
                 loc.latitude = mockLocationCoordinates.first
@@ -118,7 +113,7 @@ class MainActivity : FragmentActivity() {
                 loc.longitude += (Math.random() - 0.5) * 0.005
                     updateLocation(loc)
                 Log.d("DEBUG_TAG", "Mock location updated to ${loc.latitude}, ${loc.longitude}")
-            }, 10000L, 15000L, TimeUnit.MILLISECONDS)
+            }, 0, 15000L, TimeUnit.MILLISECONDS)
             return
         }
         // // // // // // // // // // // // //
