@@ -13,6 +13,7 @@ class BusStopViewModel (val id: Int, val name: String) : ViewModel() {
     val buses: BusesViewModel = _buses
 
     fun updateBuses(buses: List<Bus>) {
+        this._buses.updateBuses(emptyList())
         this._buses.updateBuses(buses)
     }
 
