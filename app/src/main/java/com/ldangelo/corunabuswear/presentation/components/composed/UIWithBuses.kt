@@ -7,6 +7,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -18,7 +19,7 @@ import com.ldangelo.corunabuswear.presentation.components.StopsPage
 
 
 @Composable
-fun UpdateUIWithBuses(busStopViewModel: BusStopsListViewModel, vibrator: Vibrator?, onBackPressedDispatcher: OnBackPressedDispatcher?) {
+fun UpdateUIWithBuses(busStopViewModel: BusStopsListViewModel, currentPageIndex: MutableState<Int>, vibrator: Vibrator?, onBackPressedDispatcher: OnBackPressedDispatcher?) {
     val busStops : List<BusStopViewModel> by busStopViewModel.busStops.observeAsState(emptyList())
 
     Log.d("DEBUG_TAG", "Update UI with buses method called")
@@ -26,21 +27,21 @@ fun UpdateUIWithBuses(busStopViewModel: BusStopsListViewModel, vibrator: Vibrato
         UpdateUINoStops()
         return
     }
-    UIWithBuses(busStopViewModel, vibrator, onBackPressedDispatcher)
+    UIWithBuses(busStopViewModel, currentPageIndex, vibrator, onBackPressedDispatcher)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun UIWithBuses(busStopViewModel: BusStopsListViewModel, vibrator: Vibrator?, onBackPressedDispatcher: OnBackPressedDispatcher?) {
+fun UIWithBuses(busStopViewModel: BusStopsListViewModel, currentPageIndexState: MutableState<Int>, vibrator: Vibrator?, onBackPressedDispatcher: OnBackPressedDispatcher?) {
     val busStops : List<BusStopViewModel> by busStopViewModel.busStops.observeAsState(emptyList())
-    val currentPageIndex by remember { mutableIntStateOf(0) }
+    val currentPageIndex by currentPageIndexState
     val pagerState = rememberPagerState(
         initialPage = currentPageIndex,
         pageCount = { busStops.size + 1 },
     )
     val animationScope = rememberCoroutineScope()
 
-    PagerScaffolding(pagerState, { busStops.size + 1 }, animationScope, vibrator, onBackPressedDispatcher) {
+    PagerScaffolding(pagerState, currentPageIndexState, { busStops.size + 1 }, animationScope, vibrator, onBackPressedDispatcher) {
         // TODO: Implement page specific periodic fetching
         // timeout like 10 seconds change
         if (it == 0) {

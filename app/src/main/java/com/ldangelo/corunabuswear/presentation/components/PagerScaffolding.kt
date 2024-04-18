@@ -16,6 +16,7 @@ import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -37,6 +38,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PagerScaffolding(pagerState: PagerState,
+                     currentPageIndexState: MutableState<Int>,
                      maxPages: () -> Int,
                      animationScope: CoroutineScope?,
                      vibrator: Vibrator?,
@@ -47,6 +49,9 @@ fun PagerScaffolding(pagerState: PagerState,
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
+    // update currentPageIndexState when pagerState.currentPage changes
+    currentPageIndexState.value = pagerState.currentPage
+
     val pageIndicatorState: PageIndicatorState = remember {
         object : PageIndicatorState {
             override val pageOffset: Float

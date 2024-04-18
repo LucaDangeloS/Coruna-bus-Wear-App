@@ -15,6 +15,8 @@ import android.os.VibratorManager
 import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
@@ -55,6 +57,8 @@ class MainActivity : FragmentActivity() {
     private var busTaskScheduler: ScheduledFuture<*>? = null
     private var busStops: BusStopsListViewModel = BusStopsListViewModel()
     private var vibrator: Vibrator? = null
+    private val currentPageIndex: MutableState<Int> = mutableIntStateOf(0)
+    private var prevPageIndex: Int = 0
     // // // // // Mocking // // // // //
     private var mockLocation = false
     private var mockLocationCoordinates = Pair(43.3470, -8.4004)
@@ -111,7 +115,7 @@ class MainActivity : FragmentActivity() {
                 // vary it by 0.005% of the value
                 loc.latitude += (Math.random() - 0.5) * 0.005
                 loc.longitude += (Math.random() - 0.5) * 0.005
-                    updateLocation(loc)
+                updateLocation(loc)
                 Log.d("DEBUG_TAG", "Mock location updated to ${loc.latitude}, ${loc.longitude}")
             }, 0, 15000L, TimeUnit.MILLISECONDS)
             return
@@ -146,41 +150,95 @@ class MainActivity : FragmentActivity() {
         Log.d("DEBUG_TAG", "Starting regular bus updates")
         busTaskScheduler?.cancel(true)
         val busStops: List<BusStopViewModel> = busStopsListViewModel.busStops.value ?: emptyList()
-        val delay = (BUS_API_FETCH_TIME * max((busStops.size.toFloat() / MINUTE_API_LIMIT.toFloat()), 1F)).toLong()
+        val delay: Long = if (currentPageIndex.value == 0) (BUS_API_FETCH_TIME * max((busStops.size.toFloat() / MINUTE_API_LIMIT.toFloat()), 1F)).toLong()
+            else BUS_API_FETCH_TIME
 
         busTaskScheduler = executor.scheduleAtFixedRate({
-            lifecycleScope.launch(Dispatchers.IO) {
+            Log.d("DEBUG_TAG", "Updating buses")
+            Log.d("DEBUG_TAG", "${currentPageIndex.value}")
 
-                Log.d("DEBUG_TAG", "Updating buses")
-                for (stop in busStops) {
-                    // // // // // Mocking // // // // //
-                    if (mockApi) {
-                        val buses = mockBusApi(this@MainActivity)
-                        withContext(Dispatchers.Main) {
-                            stop.updateBuses(buses)
-                        }
-                        continue
+            // SINGLE STOP
+            if (currentPageIndex.value > 0) {
+                Log.d("DEBUG_TAG", "Updating single stop")
+                val stop = busStops[currentPageIndex.value - 1]
+                updateSingleStop(stop)
+            } else {
+                Log.d("DEBUG_TAG", "Updating all stops")
+            // ALL STOPS
+                updateAllStops(busStops)
+            }
+            if (prevPageIndex != currentPageIndex.value) {
+                // if currentPageIndex.value is 0, delay is BUS_API_FETCH_TIME, else the delay is calculated
+                startRegularBusUpdates(busStopsListViewModel, delay / 2)
+            }
+            prevPageIndex = currentPageIndex.value
+        }, initialDelay, delay, TimeUnit.MILLISECONDS)
+    }
+
+    private fun updateSingleStop(busStop: BusStopViewModel) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            // // // // // Mocking // // // // //
+            if (mockApi) {
+                val buses = mockBusApi(this@MainActivity)
+                withContext(Dispatchers.Main) {
+                    // copy list of buses to update
+                    busStop.updateBuses(buses)
+                }
+                return@launch
+            }
+            // // // // // // // // // // // // //
+
+            try {
+                val buses = retryUpdateDefinitions({
+                    Thread.sleep(500)
+                    fetchBuses(busStop.id)
+                }, this@MainActivity,
+                    {
+                    displayContent {
+                        UpdateUILoading("Actualizando índice...")
                     }
-                    // // // // // // // // // // // // //
-                    try {
-                        val buses = retryUpdateDefinitions ({
-                            Thread.sleep(500)
-                            fetchBuses(stop.id)
-                        }, this@MainActivity,
+                })
+                withContext(Dispatchers.Main) {
+                    Log.d("DEBUG_TAG", "Inside updateSingleStop $buses")
+                    busStop.updateBuses(buses)
+                }
+            } catch (e: BusProvider.TooManyRequestsException) {
+                return@launch
+            }
+        }
+    }
+
+    private fun updateAllStops(busStops: List<BusStopViewModel>) {
+        // ALL STOPS
+        lifecycleScope.launch(Dispatchers.IO) {
+            for (stop in busStops) {
+                // // // // // Mocking // // // // //
+                if (mockApi) {
+                    val buses = mockBusApi(this@MainActivity)
+                    withContext(Dispatchers.Main) {
+                        stop.updateBuses(buses)
+                    }
+                    continue
+                }
+                // // // // // // // // // // // // //
+                try {
+                    val buses = retryUpdateDefinitions({
+                        Thread.sleep(500)
+                        fetchBuses(stop.id)
+                    }, this@MainActivity,
                         {
                             displayContent {
                                 UpdateUILoading("Actualizando índice...")
                             }
                         })
-                        withContext(Dispatchers.Main) {
-                            stop.updateBuses(buses)
-                        }
-                    } catch (e: BusProvider.TooManyRequestsException) {
-                        continue
+                    withContext(Dispatchers.Main) {
+                        stop.updateBuses(buses)
                     }
+                } catch (e: BusProvider.TooManyRequestsException) {
+                    continue
                 }
             }
-        }, initialDelay, delay, TimeUnit.MILLISECONDS)
+        }
     }
 
     private fun updateLocation(location: Location) {
@@ -208,7 +266,7 @@ class MainActivity : FragmentActivity() {
                 withContext(Dispatchers.Main) {
                     busStops.updateBusStops(tmpStops)
                 }
-                displayContent { UpdateUIWithBuses(busStops, vibrator, onBackPressedDispatcher) }
+                displayContent { UpdateUIWithBuses(busStops, currentPageIndex, vibrator, onBackPressedDispatcher) }
                 startRegularBusUpdates(busStops)
             } catch (e: BusProvider.TooManyRequestsException) {
                 Log.d("ERROR_TAG", "Too many requests: $e")
