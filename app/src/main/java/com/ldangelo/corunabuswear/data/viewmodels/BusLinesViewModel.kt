@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.data.viewmodel
+package com.ldangelo.corunabuswear.data.viewmodels
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

@@ -35,7 +35,7 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
-import com.ldangelo.corunabuswear.data.viewmodel.BusStopViewModel
+import com.ldangelo.corunabuswear.data.viewmodels.BusStopViewModel
 import kotlin.math.max
 
 @Composable

@@ -33,8 +33,8 @@ import com.ldangelo.corunabuswear.data.local.saveLog
 import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchBuses
 import com.ldangelo.corunabuswear.data.providers.BusProvider.mockBusApi
 import com.ldangelo.corunabuswear.data.providers.retryUpdateDefinitions
-import com.ldangelo.corunabuswear.data.viewmodel.BusStopViewModel
-import com.ldangelo.corunabuswear.data.viewmodel.BusStopsListViewModel
+import com.ldangelo.corunabuswear.data.viewmodels.BusStopViewModel
+import com.ldangelo.corunabuswear.data.viewmodels.BusStopsListViewModel
 import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUILoading
 import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUIError
 import com.ldangelo.corunabuswear.presentation.components.composed.UpdateUIWithBuses

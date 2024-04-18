@@ -9,11 +9,9 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import com.ldangelo.corunabuswear.data.viewmodel.BusStopViewModel
-import com.ldangelo.corunabuswear.data.viewmodel.BusStopsListViewModel
+import com.ldangelo.corunabuswear.data.viewmodels.BusStopViewModel
+import com.ldangelo.corunabuswear.data.viewmodels.BusStopsListViewModel
 import com.ldangelo.corunabuswear.presentation.components.BusStopPage
 import com.ldangelo.corunabuswear.presentation.components.PagerScaffolding
 import com.ldangelo.corunabuswear.presentation.components.StopsPage

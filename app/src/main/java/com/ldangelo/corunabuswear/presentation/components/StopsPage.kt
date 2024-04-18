@@ -39,8 +39,8 @@ import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import com.ldangelo.corunabuswear.data.ContextHolder
 import com.ldangelo.corunabuswear.data.companion.openSettings
 import com.ldangelo.corunabuswear.data.models.Bus
-import com.ldangelo.corunabuswear.data.viewmodel.BusStopViewModel
-import com.ldangelo.corunabuswear.data.viewmodel.BusesViewModel
+import com.ldangelo.corunabuswear.data.viewmodels.BusStopViewModel
+import com.ldangelo.corunabuswear.data.viewmodels.BusesViewModel
 import kotlinx.coroutines.Dispatchers
 
 // receives a list of stops
