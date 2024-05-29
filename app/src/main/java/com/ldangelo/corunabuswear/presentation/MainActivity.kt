@@ -17,6 +17,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
@@ -58,6 +59,7 @@ class MainActivity : FragmentActivity() {
     private var busStops: BusStopsListViewModel = BusStopsListViewModel()
     private var vibrator: Vibrator? = null
     private val currentPageIndex: MutableState<Int> = mutableIntStateOf(0)
+    private val shouldScroll: MutableState<Boolean> = mutableStateOf(false)
     private var prevPageIndex: Int = 0
     // // // // // Mocking // // // // //
     private var mockLocation = false
@@ -155,7 +157,6 @@ class MainActivity : FragmentActivity() {
 
         busTaskScheduler = executor.scheduleAtFixedRate({
             Log.d("DEBUG_TAG", "Updating buses")
-            Log.d("DEBUG_TAG", "${currentPageIndex.value}")
 
             // SINGLE STOP
             if (currentPageIndex.value > 0) {
@@ -262,11 +263,18 @@ class MainActivity : FragmentActivity() {
                         UpdateUILoading("Actualizando índice...")
                     }
                 })
+
+                // Find coincidences with previous stops
+                val prevStops = busStops.busStops.value ?: emptyList()
+                val currentStop = prevStops.find { it.id == busStops.busStops.value?.get(currentPageIndex.value)?.id }
+                val newPageIndex = tmpStops.indexOfFirst { it.id == currentStop?.id }
+                shouldScroll.value = true
+
                 // assign to viewmodel in Main thread
                 withContext(Dispatchers.Main) {
                     busStops.updateBusStops(tmpStops)
                 }
-                displayContent { UpdateUIWithBuses(busStops, currentPageIndex, vibrator, onBackPressedDispatcher) }
+                displayContent { UpdateUIWithBuses(busStops, currentPageIndex, vibrator, onBackPressedDispatcher, newPageIndex, shouldScroll) }
                 startRegularBusUpdates(busStops)
             } catch (e: BusProvider.TooManyRequestsException) {
                 Log.d("ERROR_TAG", "Too many requests: $e")

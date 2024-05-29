@@ -14,12 +14,19 @@ class BusStopsListViewModel : ViewModel() {
     }
 
     fun updateBusStops(busStops: List<BusStop>) {
+        // Find coincidences between the new bus stops and the current ones
+        // And update the buses and distance
         val busStopViewModels = busStops.map { busStop ->
             val tmp = BusStopViewModel(
                 id = busStop.id,
                 name = busStop.name,
             )
-            tmp.updateBuses(busStop.buses)
+            val currentBusStop = _busStops.value?.find { it.id == busStop.id }
+            if (currentBusStop != null) {
+                currentBusStop.buses.buses.value?.let { tmp.updateBuses(it) }
+            } else {
+                tmp.updateBuses(busStop.buses)
+            }
             tmp.updateDistance(busStop.distance)
             return@map tmp
         }
