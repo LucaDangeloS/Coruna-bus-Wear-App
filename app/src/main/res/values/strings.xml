@@ -12,4 +12,12 @@
     <string name="settings_complication_id">0</string>
     <string name="settings_open">Abiertos ajustes en el teléfono</string>
     <string name="unknown_error">Error desconocido</string>
+    <string name="error_loading_stops">Error cargando paradas</string>
+    <string name="getting_location">Obteniendo localización…</string>
+    <string name="getting_stops">Obteniendo paradas…</string>
+    <string name="no_stops_nearby">No hay paradas cercanas</string>
+    <string name="location_denied">Permiso de localización no concedido</string>
+    <string name="updating_index">Actualizando índice…</string>
+    <string name="too_many_requests">Demasiadas peticiones, espera un poco</string>
+    <string name="error_fetching_stops">Error al obtener paradas</string>
 </resources>

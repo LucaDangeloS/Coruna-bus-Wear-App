@@ -29,6 +29,7 @@ import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchStops
 import com.ldangelo.corunabuswear.data.providers.LocationProvider.startRegularLocationUpdates
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
+import com.ldangelo.corunabuswear.R
 import com.ldangelo.corunabuswear.data.ApiConstants.MINUTE_API_LIMIT
 import com.ldangelo.corunabuswear.data.AppConstants
 import com.ldangelo.corunabuswear.data.ContextHolder.setLifecycleScope
@@ -84,7 +85,7 @@ class MainActivity : FragmentActivity() {
         }
 
         // Update UI to loading state
-        displayContent { UpdateUILoading("Obteniendo localización...") }
+        displayContent { UpdateUILoading(getString(R.string.getting_location)) }
 
         // create location listener callback
         locationListener = object : LocationCallback() {
@@ -96,7 +97,7 @@ class MainActivity : FragmentActivity() {
                     -1
                 )
                 if (busStops.busStops.value.isNullOrEmpty()) {
-                    displayContent { UpdateUILoading("Obteniendo paradas...") }
+                    displayContent { UpdateUILoading(getString(R.string.getting_stops))}
                 }
                 // Handle location updates here
                 val location = locationResult.lastLocation
@@ -135,13 +136,13 @@ class MainActivity : FragmentActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (grantResults.isEmpty()) {
             Log.d("DEBUG_TAG", "Request cancelled")
-            displayContent { UpdateUIError("Permiso de localización no concedido") }
+            displayContent { UpdateUIError(getString(R.string.location_denied)) }
             return
         } else {
             for (result in grantResults) {
                 if (result != PERMISSION_GRANTED) {
                     Log.d("DEBUG_TAG", "Permission not granted")
-                    displayContent { UpdateUIError("Permiso de localización no concedido") }
+                    displayContent { UpdateUIError(getString(R.string.location_denied)) }
                     return
                 }
             }
@@ -196,7 +197,7 @@ class MainActivity : FragmentActivity() {
                 }, this@MainActivity,
                     {
                     displayContent {
-                        UpdateUILoading("Actualizando índice...")
+                        UpdateUILoading(getString(R.string.updating_index))
                     }
                 })
                 withContext(Dispatchers.Main) {
@@ -229,7 +230,7 @@ class MainActivity : FragmentActivity() {
                     }, this@MainActivity,
                         {
                             displayContent {
-                                UpdateUILoading("Actualizando índice...")
+                                UpdateUILoading(getString(R.string.updating_index))
                             }
                         })
                     withContext(Dispatchers.Main) {
@@ -260,7 +261,7 @@ class MainActivity : FragmentActivity() {
                 }, this@MainActivity,
                 {
                     displayContent {
-                        UpdateUILoading("Actualizando índice...")
+                        UpdateUILoading(getString(R.string.updating_index))
                     }
                 })
 
@@ -280,14 +281,14 @@ class MainActivity : FragmentActivity() {
                 Log.d("ERROR_TAG", "Too many requests: $e")
                 if (busTaskScheduler?.isCancelled == true) {
                     withContext(Dispatchers.Main) {
-                        displayContent { UpdateUIError("Demasiadas peticiones, espera un poco") }
+                        displayContent { UpdateUIError(getString(R.string.too_many_requests)) }
                     }
                 }
             } catch (e: IOException) {
                 Log.d("ERROR_TAG", "Error fetching stops: $e")
                 saveLog(this@MainActivity, "Error fetching stops: $e")
                 withContext(Dispatchers.Main) {
-                    displayContent { UpdateUIError("Error al obtener paradas", e.toString()) }
+                    displayContent { UpdateUIError(getString(R.string.error_fetching_stops), e.toString()) }
                 }
             }
         }
