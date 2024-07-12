@@ -9,6 +9,7 @@ import com.ldangelo.corunabuswear.data.companion.MessagePaths.DEPLOY_SETTINGS
 import com.ldangelo.corunabuswear.presentation.components.getNodes
 
 fun emitMessage(context: Context, path: String, message: String): Task<Int> {
+    // TODO: Fix when there are no nodes
     getNodes(context).first().also {
         return Wearable.getMessageClient(context).sendMessage(
             it,
