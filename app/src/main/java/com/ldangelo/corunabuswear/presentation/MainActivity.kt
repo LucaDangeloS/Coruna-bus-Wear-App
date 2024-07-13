@@ -134,18 +134,10 @@ class MainActivity : FragmentActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (grantResults.isEmpty()) {
+        if (grantResults.isEmpty() || grantResults.any { it != PERMISSION_GRANTED }) {
             Log.d("DEBUG_TAG", "Request cancelled")
             displayContent { UpdateUIError(getString(R.string.location_denied)) }
             return
-        } else {
-            for (result in grantResults) {
-                if (result != PERMISSION_GRANTED) {
-                    Log.d("DEBUG_TAG", "Permission not granted")
-                    displayContent { UpdateUIError(getString(R.string.location_denied)) }
-                    return
-                }
-            }
         }
     }
 
@@ -170,7 +162,6 @@ class MainActivity : FragmentActivity() {
                 updateAllStops(busStops)
             }
             if (prevPageIndex != currentPageIndex.value) {
-                // if currentPageIndex.value is 0, delay is BUS_API_FETCH_TIME, else the delay is calculated
                 startRegularBusUpdates(busStopsListViewModel, delay / 2)
             }
             prevPageIndex = currentPageIndex.value
