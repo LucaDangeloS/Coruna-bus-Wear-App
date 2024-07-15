@@ -32,7 +32,10 @@ import com.google.android.gms.location.LocationResult
 import com.ldangelo.corunabuswear.R
 import com.ldangelo.corunabuswear.data.ApiConstants.MINUTE_API_LIMIT
 import com.ldangelo.corunabuswear.data.AppConstants
+import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_FETCH_ALL_BUSES_ON_LOCATION_UPDATE
+import com.ldangelo.corunabuswear.data.AppConstants.FETCH_ALL_BUSES_ON_LOCATION_UPDATE_KEY
 import com.ldangelo.corunabuswear.data.ContextHolder.setLifecycleScope
+import com.ldangelo.corunabuswear.data.local.getStringOrDefault
 import com.ldangelo.corunabuswear.data.local.saveLog
 import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchBuses
 import com.ldangelo.corunabuswear.data.providers.BusProvider.mockBusApi
@@ -147,6 +150,12 @@ class MainActivity : FragmentActivity() {
         val busStops: List<BusStopViewModel> = busStopsListViewModel.busStops.value ?: emptyList()
         val delay: Long = if (currentPageIndex.value == 0) (BUS_API_FETCH_TIME * max((busStops.size.toFloat() / MINUTE_API_LIMIT.toFloat()), 1F)).toLong()
             else BUS_API_FETCH_TIME
+        val loadAllBusesOnLocationFetch = getStringOrDefault(
+            AppConstants.SETTINGS_PREF,
+            this,
+            FETCH_ALL_BUSES_ON_LOCATION_UPDATE_KEY,
+            DEFAULT_FETCH_ALL_BUSES_ON_LOCATION_UPDATE.toString(),
+        ).toBoolean()
 
         busTaskScheduler = executor.scheduleAtFixedRate({
             Log.d("DEBUG_TAG", "Updating buses")
@@ -157,9 +166,11 @@ class MainActivity : FragmentActivity() {
                 val stop = busStops[currentPageIndex.value - 1]
                 updateSingleStop(stop)
             } else {
-                Log.d("DEBUG_TAG", "Updating all stops")
             // ALL STOPS
-                updateAllStops(busStops)
+                if (loadAllBusesOnLocationFetch) {
+                    Log.d("DEBUG_TAG", "Updating all stops")
+                    updateAllStops(busStops)
+                }
             }
             if (prevPageIndex != currentPageIndex.value) {
                 startRegularBusUpdates(busStopsListViewModel, delay / 2)
@@ -236,14 +247,18 @@ class MainActivity : FragmentActivity() {
 
     private fun updateLocation(location: Location) {
         busTaskScheduler?.cancel(true)
-        val radius = applicationContext.getSharedPreferences(AppConstants.SETTINGS_PREF, Context.MODE_PRIVATE).getInt(
+        val radius = getStringOrDefault(
+            AppConstants.SETTINGS_PREF,
+            this,
             AppConstants.STOPS_RADIUS_KEY,
-            AppConstants.DEFAULT_STOPS_RADIUS
-        )
-        val limit = applicationContext.getSharedPreferences(AppConstants.SETTINGS_PREF, Context.MODE_PRIVATE).getInt(
+            AppConstants.DEFAULT_STOPS_RADIUS.toString()
+        ).toInt()
+        val limit = getStringOrDefault(
+            AppConstants.SETTINGS_PREF,
+            this,
             AppConstants.STOPS_FETCH_KEY,
-            AppConstants.DEFAULT_STOPS_FETCH
-        )
+            AppConstants.DEFAULT_STOPS_FETCH.toString()
+        ).toInt()
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -257,9 +272,12 @@ class MainActivity : FragmentActivity() {
                 })
 
                 // Find coincidences with previous stops
+                val currStopPageIndex = currentPageIndex.value - 1
                 val prevStops = busStops.busStops.value ?: emptyList()
                 val currentStop = prevStops.find { it.id == busStops.busStops.value?.get(currentPageIndex.value)?.id }
                 val newPageIndex = tmpStops.indexOfFirst { it.id == currentStop?.id }
+                val currentStop = if (currStopPageIndex == -1) null else prevStops.find { it.id == busStops.busStops.value?.get(currStopPageIndex)?.id }
+                val newPageIndex = tmpStops.indexOfFirst { it.id == currentStop?.id } + 1
                 shouldScroll.value = true
 
                 // assign to viewmodel in Main thread

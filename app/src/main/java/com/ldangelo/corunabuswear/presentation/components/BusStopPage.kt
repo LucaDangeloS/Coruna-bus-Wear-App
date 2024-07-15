@@ -73,6 +73,7 @@ fun BusStopPage(stop: BusStopViewModel) {
                 verticalArrangement = Arrangement.spacedBy(3.dp),
                 anchorType = ScalingLazyListAnchorType.ItemStart,
                 contentPadding = columnPadding,
+                rotaryScrollableBehavior = null,
             ) {
                 if (buses.isEmpty()) {
                     item {

@@ -18,4 +18,6 @@ object AppConstants {
     const val DEFAULT_LOC_DISTANCE = 30f
     const val LOC_INTERVAL_KEY = "location_interval"
     const val DEFAULT_LOC_INTERVAL = 30000L
+    const val FETCH_ALL_BUSES_ON_LOCATION_UPDATE_KEY = "fetch_all_buses_on_location_update"
+    const val DEFAULT_FETCH_ALL_BUSES_ON_LOCATION_UPDATE = true
 }

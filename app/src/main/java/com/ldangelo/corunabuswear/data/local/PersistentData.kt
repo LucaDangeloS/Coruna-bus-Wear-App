@@ -27,19 +27,9 @@ inline fun <reified BusLine> getBusConnection(context: Context, key: String): Bu
     return getObject<BusLine>("BusConnection", context, key)
 }
 
-// Functions to save and retrieve a custom objects from SharedPreferences
-fun <T> saveObject(prefName: String, context: Context, key: String, obj: T) {
-    val gson = Gson()
-    val json = gson.toJson(obj)
+fun getStringOrDefault(prefName: String, context: Context, key: String, default: String): String {
     val sharedPreferences = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
-    sharedPreferences.edit().putString(key, json).apply()
-}
-
-inline fun <reified T> getObject(prefName: String, context: Context, key: String): T? {
-    val gson = Gson()
-    val sharedPreferences = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
-    val json = sharedPreferences.getString(key, null)
-    return gson.fromJson(json, T::class.java)
+    return sharedPreferences.getString(key, default) ?: default
 }
 
 fun clearAllStoredBusData(context: Context) {
@@ -63,4 +53,19 @@ fun saveLog(context: Context, log: String) {
     context.openFileOutput(LOG_FILE + java.time.LocalDateTime.now().toString() + ".log", Context.MODE_PRIVATE).use {
         it.write(log.toByteArray())
     }
+}
+
+// Functions to save and retrieve a custom objects from SharedPreferences
+fun <T> saveObject(prefName: String, context: Context, key: String, obj: T) {
+    val gson = Gson()
+    val json = gson.toJson(obj)
+    val sharedPreferences = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
+    sharedPreferences.edit().putString(key, json).apply()
+}
+
+inline fun <reified T> getObject(prefName: String, context: Context, key: String): T? {
+    val gson = Gson()
+    val sharedPreferences = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
+    val json = sharedPreferences.getString(key, null)
+    return gson.fromJson(json, T::class.java)
 }

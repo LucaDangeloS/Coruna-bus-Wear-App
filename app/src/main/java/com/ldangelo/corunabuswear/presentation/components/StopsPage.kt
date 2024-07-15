@@ -74,6 +74,7 @@ fun StopsPage(stops: List<BusStopViewModel>, pagerState: PagerState, animationSc
                 verticalArrangement = Arrangement.spacedBy(3.dp),
                 anchorType = ScalingLazyListAnchorType.ItemStart,
                 contentPadding = columnPadding,
+                rotaryScrollableBehavior = null,
             ) {
                 for ((index, stop) in stops.withIndex()) {
                     item {

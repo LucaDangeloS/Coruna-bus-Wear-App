@@ -81,20 +81,21 @@ fun PagerScaffolding(pagerState: PagerState,
     }
     onBackPressedDispatcher?.addCallback(backCallback)
 
-    fun onRotaryScroll(pixels: Float) {
+    fun onRotaryScroll(pixels: Float): Boolean {
         val currentPage = pagerState.currentPage
         val nextPage = pixels / 20
         val truncatedNextPage = if (nextPage > 1) 1 else if (nextPage < -1) -1 else 0
         if (truncatedNextPage == 0) {
-            return
+            return false
         }
         if (currentPage + truncatedNextPage < 0 || currentPage + truncatedNextPage >= maxPages()) {
-            return
+            return false
         }
         animationScope?.launch {
             pagerState.animateScrollToPage(currentPage + truncatedNextPage)
         }
         vibrator?.vibrate(vibrationEffect)
+        return true
     }
 
     Scaffold (
@@ -104,8 +105,7 @@ fun PagerScaffolding(pagerState: PagerState,
                 selectedColor = MaterialTheme.colors.primary,
                 unselectedColor = MaterialTheme.colors.onSecondary.copy(alpha = 0.6f),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp)
+                    .padding(vertical = 6.dp),
             )
         },
         timeText = {
@@ -129,7 +129,6 @@ fun PagerScaffolding(pagerState: PagerState,
                 .padding(bottom = 3.dp)
                 .onRotaryScrollEvent {
                     onRotaryScroll(it.horizontalScrollPixels)
-                    true
                 }
                 .focusRequester(focusRequester)
                 .focusable(),
@@ -138,14 +137,14 @@ fun PagerScaffolding(pagerState: PagerState,
             reverseLayout = false,
             pageSize = PageSize.Fill,
             flingBehavior = PagerDefaults.flingBehavior(state = pagerState),
-            key = null,
+            key = { it },
             pageNestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
                 pagerState,
                 Orientation.Horizontal
             ),
             pageContent = {
                 content(it)
-            }
+            },
         )
     }
 }
