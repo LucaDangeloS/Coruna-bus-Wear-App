@@ -274,8 +274,6 @@ class MainActivity : FragmentActivity() {
                 // Find coincidences with previous stops
                 val currStopPageIndex = currentPageIndex.value - 1
                 val prevStops = busStops.busStops.value ?: emptyList()
-                val currentStop = prevStops.find { it.id == busStops.busStops.value?.get(currentPageIndex.value)?.id }
-                val newPageIndex = tmpStops.indexOfFirst { it.id == currentStop?.id }
                 val currentStop = if (currStopPageIndex == -1) null else prevStops.find { it.id == busStops.busStops.value?.get(currStopPageIndex)?.id }
                 val newPageIndex = tmpStops.indexOfFirst { it.id == currentStop?.id } + 1
                 shouldScroll.value = true
