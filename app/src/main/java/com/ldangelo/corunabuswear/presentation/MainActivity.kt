@@ -188,6 +188,9 @@ class MainActivity : FragmentActivity() {
                     // copy list of buses to update
                     busStop.updateBuses(buses)
                 }
+                withContext(Dispatchers.Main) {
+                    busStop.updateApiWasCalled(true)
+                }
                 return@launch
             }
             // // // // // // // // // // // // //
@@ -208,6 +211,10 @@ class MainActivity : FragmentActivity() {
                 }
             } catch (e: BusProvider.TooManyRequestsException) {
                 return@launch
+            } finally {
+                withContext(Dispatchers.Main) {
+                    busStop.updateApiWasCalled(true)
+                }
             }
         }
     }
@@ -221,6 +228,7 @@ class MainActivity : FragmentActivity() {
                     val buses = mockBusApi(this@MainActivity)
                     withContext(Dispatchers.Main) {
                         stop.updateBuses(buses)
+                        stop.updateApiWasCalled(true)
                     }
                     continue
                 }
@@ -240,6 +248,10 @@ class MainActivity : FragmentActivity() {
                     }
                 } catch (e: BusProvider.TooManyRequestsException) {
                     continue
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        stop.updateApiWasCalled(true)
+                    }
                 }
             }
         }

@@ -8,9 +8,11 @@ import com.ldangelo.corunabuswear.data.models.Bus
 class BusStopViewModel (val id: Int, val name: String) : ViewModel() {
     private val _distance: MutableLiveData<Int> = MutableLiveData(9999)
     private val _buses: BusesViewModel = BusesViewModel()
+    private var _apiWasCalled: LiveData<Boolean> = MutableLiveData(false)
 
     val distance: LiveData<Int> = _distance
     val buses: BusesViewModel = _buses
+    val apiWasCalled : LiveData<Boolean> = _apiWasCalled
 
     fun updateBuses(buses: List<Bus>) {
         this._buses.updateBuses(emptyList())
@@ -19,6 +21,10 @@ class BusStopViewModel (val id: Int, val name: String) : ViewModel() {
 
     fun updateDistance(distance: Int) {
         this._distance.value = distance
+    }
+
+    fun updateApiWasCalled(apiWasCalled: Boolean) {
+        (_apiWasCalled as MutableLiveData).value = apiWasCalled
     }
 
     @Override

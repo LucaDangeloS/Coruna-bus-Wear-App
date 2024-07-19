@@ -29,12 +29,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
+import com.ldangelo.corunabuswear.R
 import com.ldangelo.corunabuswear.data.viewmodels.BusStopViewModel
 import kotlin.math.max
 
@@ -48,6 +50,7 @@ fun BusStopPage(stop: BusStopViewModel) {
     )
     val scrollState = ScalingLazyListState()
     val buses: List<Bus> by stop.buses.buses.observeAsState(emptyList())
+    val apiWasCalled : Boolean by stop.apiWasCalled.observeAsState(false)
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -75,10 +78,10 @@ fun BusStopPage(stop: BusStopViewModel) {
                 contentPadding = columnPadding,
                 rotaryScrollableBehavior = null,
             ) {
-                if (buses.isEmpty()) {
+                if (buses.isEmpty() && apiWasCalled) {
                     item {
                         Text(
-                            text = "No hay buses :(",
+                            text = stringResource(R.string.no_buses_found),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 2.dp, horizontal = 14.dp),
@@ -88,6 +91,20 @@ fun BusStopPage(stop: BusStopViewModel) {
                             fontWeight = FontWeight.Bold,
                         )
                     }
+                } else if (!apiWasCalled) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.loading_buses),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp, horizontal = 14.dp),
+                            color = MaterialTheme.colors.onSecondary,
+                            textAlign = TextAlign.Center,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+
                 } else {
                     for (bus in buses) {
                         item {
