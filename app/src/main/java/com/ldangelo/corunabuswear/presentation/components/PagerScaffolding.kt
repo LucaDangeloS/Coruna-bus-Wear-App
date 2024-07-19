@@ -38,19 +38,16 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PagerScaffolding(pagerState: PagerState,
-                     currentPageIndexState: MutableState<Int>,
                      maxPages: () -> Int,
                      animationScope: CoroutineScope?,
                      vibrator: Vibrator?,
-                     onBackPressedDispatcher: OnBackPressedDispatcher?,
+                     onBackPressedDispatcher: OnBackPressedDispatcher,
                      content: @Composable (Int) -> Unit) {
 
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
-    // update currentPageIndexState when pagerState.currentPage changes
-    currentPageIndexState.value = pagerState.currentPage
 
     val pageIndicatorState: PageIndicatorState = remember {
         object : PageIndicatorState {
@@ -79,7 +76,7 @@ fun PagerScaffolding(pagerState: PagerState,
             }
         }
     }
-    onBackPressedDispatcher?.addCallback(backCallback)
+    onBackPressedDispatcher.addCallback(backCallback)
 
     fun onRotaryScroll(pixels: Float): Boolean {
         val currentPage = pagerState.currentPage
@@ -98,6 +95,17 @@ fun PagerScaffolding(pagerState: PagerState,
         return true
     }
 
+//    // Define a state for holding the current time as a string
+//    var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+//
+//    // Use LaunchedEffect to periodically update the time
+//    LaunchedEffect(Unit) {
+//        while (isActive) {
+//            currentTime = System.currentTimeMillis()
+//            delay(1000) // Update the time every second
+//        }
+//    }
+
     Scaffold (
         pageIndicator = {
             HorizontalPageIndicator(
@@ -114,8 +122,16 @@ fun PagerScaffolding(pagerState: PagerState,
                     fontSize = 12.sp,
                     color = MaterialTheme.colors.onSecondary,
                 ),
-
-                )
+//                endCurvedContent = {
+//                    basicCurvedText(
+//                        Instant.ofEpochMilli(currentTime).atZone(ZoneId.systemDefault()).toLocalTime().toString(),
+//                        style = CurvedTextStyle(
+//                            fontSize = 12.sp,
+////                            color = MaterialTheme.colors.onSecondary,
+//                        ),
+//                    )
+//                }
+            )
         },
         vignette = {
             Vignette(vignettePosition = VignettePosition.TopAndBottom)
