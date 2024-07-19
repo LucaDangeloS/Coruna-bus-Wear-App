@@ -322,14 +322,18 @@ class MainActivity : FragmentActivity() {
                 val prevStops = busStops.busStops.value ?: emptyList()
                 val currentStop = if (currStopPageIndex == -1) null else prevStops.find { it.id == busStops.busStops.value?.get(currStopPageIndex)?.id }
                 val newPageIndex = tmpStops.indexOfFirst { it.id == currentStop?.id } + 1
-                shouldScroll.value = true
-
                 // assign to viewmodel in Main thread
                 withContext(Dispatchers.Main) {
                     busStops.updateBusStops(tmpStops)
                 }
-                displayContent { UpdateUIWithBuses(busStops, currentPageIndex, vibrator, onBackPressedDispatcher, newPageIndex, shouldScroll) }
-                startRegularBusUpdates(busStops)
+                displayContent { UpdateUIWithBuses(busStops,
+                    currentPageIndex,
+                    vibrator,
+                    onBackPressedDispatcher,
+                    newPageIndex,
+                    {triggerRegularBusUpdates(it)},
+                )}
+//                startRegularBusUpdates(busStops)
             } catch (e: BusProvider.TooManyRequestsException) {
                 Log.d("ERROR_TAG", "Too many requests: $e")
                 if (busTaskScheduler?.isCancelled == true) {
