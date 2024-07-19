@@ -17,7 +17,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
@@ -63,8 +62,11 @@ class MainActivity : FragmentActivity() {
     private var busStops: BusStopsListViewModel = BusStopsListViewModel()
     private var vibrator: Vibrator? = null
     private val currentPageIndex: MutableState<Int> = mutableIntStateOf(0)
-    private val shouldScroll: MutableState<Boolean> = mutableStateOf(false)
     private var prevPageIndex: Int = 0
+    private var loadAllBusesOnLocationFetch: Boolean = false
+
+    private var lastAPICallTimestamp : Long = 0L
+    private var lastAPICallDelay: Long = 0L
     // // // // // Mocking // // // // //
     private var mockLocation = false
     private var mockLocationCoordinates = Pair(43.3470, -8.4004)
@@ -77,6 +79,13 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         setApplicationContext(this)
         setLifecycleScope(lifecycleScope)
+        lastAPICallTimestamp = System.currentTimeMillis()
+        loadAllBusesOnLocationFetch = getStringOrDefault(
+            AppConstants.SETTINGS_PREF,
+            this,
+            FETCH_ALL_BUSES_ON_LOCATION_UPDATE_KEY,
+            DEFAULT_FETCH_ALL_BUSES_ON_LOCATION_UPDATE.toString(),
+        ).toBoolean()
 
         // Set vibrator service
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -144,21 +153,49 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun startRegularBusUpdates(busStopsListViewModel: BusStopsListViewModel, initialDelay: Long = 0) {
+    private fun triggerRegularBusUpdates(pageIndex: Int) {
+        if (busTaskScheduler == null) {
+            if (!loadAllBusesOnLocationFetch) {
+                if (pageIndex == 0) {
+                    return
+                }
+                startRegularBusUpdates(busStops, 1500, pageIndex)
+                return
+            }
+            startRegularBusUpdates(busStops)
+        }
+
+        if (prevPageIndex > 0 && pageIndex == 0) {
+            val remainingTime = lastAPICallDelay - (System.currentTimeMillis() - lastAPICallTimestamp)
+//            Log.d("DEBUG_TAG", "Page changed to 0 waiting $remainingTime ms")
+            startRegularBusUpdates(busStops, remainingTime)
+        } else if (prevPageIndex == 0 && pageIndex > 0) {
+            val remainingTime = BUS_API_FETCH_TIME - (System.currentTimeMillis() - lastAPICallTimestamp)
+//            Log.d("DEBUG_TAG", "Page changed from 0, waiting $remainingTime ms")
+            startRegularBusUpdates(busStops, remainingTime)
+        }
+        prevPageIndex = pageIndex
+        return
+    }
+
+    private fun startRegularBusUpdates(busStopsListViewModel: BusStopsListViewModel, initialDelay: Long = 0, checkPageIndex: Int? = null) {
         Log.d("DEBUG_TAG", "Starting regular bus updates")
         busTaskScheduler?.cancel(true)
         val busStops: List<BusStopViewModel> = busStopsListViewModel.busStops.value ?: emptyList()
-        val delay: Long = if (currentPageIndex.value == 0) (BUS_API_FETCH_TIME * max((busStops.size.toFloat() / MINUTE_API_LIMIT.toFloat()), 1F)).toLong()
+        val delay: Long = if (currentPageIndex.value == 0)
+                (BUS_API_FETCH_TIME * max((busStops.size.toFloat() / MINUTE_API_LIMIT.toFloat()), 1F)).toLong()
             else BUS_API_FETCH_TIME
-        val loadAllBusesOnLocationFetch = getStringOrDefault(
-            AppConstants.SETTINGS_PREF,
-            this,
-            FETCH_ALL_BUSES_ON_LOCATION_UPDATE_KEY,
-            DEFAULT_FETCH_ALL_BUSES_ON_LOCATION_UPDATE.toString(),
-        ).toBoolean()
+        var keepChecking = (initialDelay > 0)
 
         busTaskScheduler = executor.scheduleAtFixedRate({
-            Log.d("DEBUG_TAG", "Updating buses")
+            if (keepChecking) {
+                keepChecking = false
+                Thread.sleep(initialDelay)
+                if (checkPageIndex == currentPageIndex.value) {
+                    return@scheduleAtFixedRate
+                }
+
+            }
 
             // SINGLE STOP
             if (currentPageIndex.value > 0) {
@@ -172,11 +209,9 @@ class MainActivity : FragmentActivity() {
                     updateAllStops(busStops)
                 }
             }
-            if (prevPageIndex != currentPageIndex.value) {
-                startRegularBusUpdates(busStopsListViewModel, delay / 2)
-            }
-            prevPageIndex = currentPageIndex.value
-        }, initialDelay, delay, TimeUnit.MILLISECONDS)
+            lastAPICallDelay = delay
+            lastAPICallTimestamp = System.currentTimeMillis()
+        }, 0L, delay, TimeUnit.MILLISECONDS)
     }
 
     private fun updateSingleStop(busStop: BusStopViewModel) {
@@ -206,7 +241,6 @@ class MainActivity : FragmentActivity() {
                     }
                 })
                 withContext(Dispatchers.Main) {
-                    Log.d("DEBUG_TAG", "Inside updateSingleStop $buses")
                     busStop.updateBuses(buses)
                 }
             } catch (e: BusProvider.TooManyRequestsException) {
