@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Coruña Bus Companion</string>
+    <string name="launch_wearable_app">Lanzar apliación de reloj</string>
+    <string name="stops_fetch_setting">Número de paradas</string>
+    <string name="stops_radius_setting">Radio de paradas</string>
+    <string name="loc_distance_setting">Distancia de actualización de localización</string>
+    <string name="loc_interval_setting">Intervalo de actualización de localización</string>
+    <string name="fetch_all_buses_on_location_update_setting">Mostrar todos los buses de las paradas</string>
 </resources>
