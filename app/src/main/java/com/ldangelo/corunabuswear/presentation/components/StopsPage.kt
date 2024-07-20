@@ -126,8 +126,8 @@ fun StopListElement(stop: BusStopViewModel, index: Int, pagerState: PagerState, 
                     .fillMaxWidth()
                     .padding(vertical = 1.dp)
                     .basicMarquee(
-                        repeatDelayMillis = 1000,
-                        initialDelayMillis = 1500,
+                        repeatDelayMillis = 4000 + index * 1500,
+                        initialDelayMillis = 1000 + index * 1500,
                     ),
                 text = stop.name,
                 color = MaterialTheme.colors.onSecondary,
