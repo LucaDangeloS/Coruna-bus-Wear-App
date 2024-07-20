@@ -22,7 +22,7 @@ import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_LOC_INTERVAL
 import com.ldangelo.corunabuswear.data.AppConstants.LOC_DISTANCE_KEY
 import com.ldangelo.corunabuswear.data.AppConstants.LOC_INTERVAL_KEY
 import com.ldangelo.corunabuswear.data.AppConstants.SETTINGS_PREF
-import com.ldangelo.corunabuswear.data.local.getStringOrDefault
+import com.ldangelo.corunabuswear.data.local.getStringOrDefaultPreference
 
 object LocationProvider {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -59,13 +59,13 @@ object LocationProvider {
             Log.d("DEBUG_TAG", "Permission not granted")
 //            throw PermissionNotGrantedException("Permission not granted")
         }
-        val interval = getStringOrDefault(
+        val interval = getStringOrDefaultPreference(
             SETTINGS_PREF,
             context,
             LOC_INTERVAL_KEY,
             DEFAULT_LOC_INTERVAL.toString()
         ).toLong()
-        val distanceUpdate = getStringOrDefault(
+        val distanceUpdate = getStringOrDefaultPreference(
             SETTINGS_PREF,
             context,
             LOC_DISTANCE_KEY,

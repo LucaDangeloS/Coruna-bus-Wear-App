@@ -27,7 +27,7 @@ inline fun <reified BusLine> getBusConnection(context: Context, key: String): Bu
     return getObject<BusLine>("BusConnection", context, key)
 }
 
-fun getStringOrDefault(prefName: String, context: Context, key: String, default: String): String {
+fun getStringOrDefaultPreference(prefName: String, context: Context, key: String, default: String): String {
     val sharedPreferences = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
     return sharedPreferences.getString(key, default) ?: default
 }
