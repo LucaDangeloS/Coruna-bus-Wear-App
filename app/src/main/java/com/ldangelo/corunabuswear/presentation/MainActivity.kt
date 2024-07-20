@@ -34,7 +34,7 @@ import com.ldangelo.corunabuswear.data.AppConstants
 import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_FETCH_ALL_BUSES_ON_LOCATION_UPDATE
 import com.ldangelo.corunabuswear.data.AppConstants.FETCH_ALL_BUSES_ON_LOCATION_UPDATE_KEY
 import com.ldangelo.corunabuswear.data.ContextHolder.setLifecycleScope
-import com.ldangelo.corunabuswear.data.local.getStringOrDefault
+import com.ldangelo.corunabuswear.data.local.getStringOrDefaultPreference
 import com.ldangelo.corunabuswear.data.local.saveLog
 import com.ldangelo.corunabuswear.data.providers.BusProvider.fetchBuses
 import com.ldangelo.corunabuswear.data.providers.BusProvider.mockBusApi
@@ -80,7 +80,7 @@ class MainActivity : FragmentActivity() {
         setApplicationContext(this)
         setLifecycleScope(lifecycleScope)
         lastAPICallTimestamp = System.currentTimeMillis()
-        loadAllBusesOnLocationFetch = getStringOrDefault(
+        loadAllBusesOnLocationFetch = getStringOrDefaultPreference(
             AppConstants.SETTINGS_PREF,
             this,
             FETCH_ALL_BUSES_ON_LOCATION_UPDATE_KEY,
@@ -293,13 +293,13 @@ class MainActivity : FragmentActivity() {
 
     private fun updateLocation(location: Location) {
         busTaskScheduler?.cancel(true)
-        val radius = getStringOrDefault(
+        val radius = getStringOrDefaultPreference(
             AppConstants.SETTINGS_PREF,
             this,
             AppConstants.STOPS_RADIUS_KEY,
             AppConstants.DEFAULT_STOPS_RADIUS.toString()
         ).toInt()
-        val limit = getStringOrDefault(
+        val limit = getStringOrDefaultPreference(
             AppConstants.SETTINGS_PREF,
             this,
             AppConstants.STOPS_FETCH_KEY,
