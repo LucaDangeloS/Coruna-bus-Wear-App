@@ -28,8 +28,8 @@ val Purple700 = Color(0xFF3700B3)
 
 private val DarkColorScheme = darkColorScheme(
     primary = RedTranvias2,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
+    secondary = RedTranviasSecondary2,
+    tertiary = Purple200,
     background = Color(0xFF1C1B1F),
     onPrimary = Color.White,
     onSecondary = Color.White,
@@ -37,7 +37,7 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = RedTranvias,
-    secondary = PurpleGrey40,
+    secondary = RedTranviasSecondary,
     tertiary = Pink40,
     background = Color(0xFFFFFBFE),
     onPrimary = Color.White,
