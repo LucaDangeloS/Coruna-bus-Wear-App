@@ -1,16 +1,23 @@
 package com.ldangelo.corunabuswear.data.companion
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.Wearable
 import com.ldangelo.corunabuswear.R
-import com.ldangelo.corunabuswear.data.companion.MessagePaths.DEPLOY_SETTINGS
-import com.ldangelo.corunabuswear.presentation.components.getNodes
+import com.ldangelo.corunabuswear.data.companion.MessagePaths.GET_SETTINGS
+import com.ldangelo.corunabuswear.data.companion.MessagePaths.OUT.DEPLOY_SETTINGS
+
+fun getNodes(context: Context): Collection<String> {
+    return Tasks.await(Wearable.getNodeClient(context).connectedNodes).map { it.id }
+}
 
 fun emitMessage(context: Context, path: String, message: String): Task<Int> {
-    // TODO: Fix when there are no nodes
-    getNodes(context).first().also {
+    val firstNode = getNodes(context).firstOrNull() ?: throw IllegalStateException("No nodes found")
+    firstNode.also {
+        Log.d("DataLayerService", "$message sent to as ${message.toByteArray()}")
         return Wearable.getMessageClient(context).sendMessage(
             it,
             path,
@@ -20,13 +27,37 @@ fun emitMessage(context: Context, path: String, message: String): Task<Int> {
 }
 
 fun openSettings(context: Context) {
-    val sendTask: Task<*> = emitMessage(context, DEPLOY_SETTINGS, "")
+    val sendTask: Task<*>;
+    try {
+        sendTask = emitMessage(context, DEPLOY_SETTINGS, "")
+    } catch (e: IllegalStateException) {
+//        Toast.makeText(context, R.string.no_device_found, Toast.LENGTH_SHORT).show()
+        return
+    }
     sendTask.apply {
         addOnSuccessListener {
             Toast.makeText(context, R.string.settings_open, Toast.LENGTH_SHORT).show()
         }
         addOnFailureListener {
             Toast.makeText(context, R.string.unknown_error, Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
+fun sendCurrentSettings(context: Context, settings: String) {
+    val sendTask: Task<*>;
+    try {
+        sendTask = emitMessage(context, GET_SETTINGS, settings)
+    } catch (e: IllegalStateException) {
+        return
+    }
+
+    sendTask.apply {
+        addOnSuccessListener {
+
+        }
+        addOnFailureListener {
+
         }
     }
 }
