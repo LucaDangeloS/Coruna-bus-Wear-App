@@ -32,6 +32,11 @@ fun getStringOrDefaultPreference(prefName: String, context: Context, key: String
     return sharedPreferences.getString(key, default) ?: default
 }
 
+fun saveStringPreference(prefName: String, context: Context, key: String, value: String) {
+    val sharedPreferences = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
+    sharedPreferences.edit().putString(key, value).apply()
+}
+
 fun clearAllStoredBusData(context: Context) {
     var sharedPreferences = context.getSharedPreferences("BusLine", Context.MODE_PRIVATE)
     var editor = sharedPreferences.edit()
