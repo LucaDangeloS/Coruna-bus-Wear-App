@@ -49,6 +49,33 @@
 <!--             android:resource="@drawable/tile_preview" />-->
 <!--         </service>-->
 
+        <service
+            android:name=".data.datalayer.DataLayerListenerService"
+            android:exported="true">
+<!--            <intent-filter>-->
+<!--                &lt;!&ndash; listeners receive events that match the action and data filters &ndash;&gt;-->
+<!--                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />-->
+<!--                <data-->
+<!--                    android:host="*"-->
+<!--                    android:pathPrefix="/settings/set"-->
+<!--                    android:scheme="wear" />-->
+<!--            </intent-filter>-->
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/deploy"
+                    android:scheme="wear" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/settings"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
+
         <uses-library
             android:name="com.google.android.wearable"
             android:required="true" />
