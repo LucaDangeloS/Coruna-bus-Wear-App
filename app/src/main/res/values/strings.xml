@@ -20,4 +20,7 @@
     <string name="updating_index">Actualizando índice…</string>
     <string name="too_many_requests">Demasiadas peticiones, espera un poco</string>
     <string name="error_fetching_stops">Error al obtener paradas</string>
+    <string name="no_device_found">No se encontró un dispositivo móvil</string>
+    <string name="no_buses_found">No hay buses :(</string>
+    <string name="loading_buses">Sin datos</string>
 </resources>
