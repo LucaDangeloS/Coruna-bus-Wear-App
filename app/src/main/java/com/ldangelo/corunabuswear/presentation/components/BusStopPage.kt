@@ -78,7 +78,14 @@ fun BusStopPage(stop: BusStopViewModel) {
                 contentPadding = columnPadding,
                 rotaryScrollableBehavior = null,
             ) {
-                if (buses.isEmpty() && apiWasCalled) {
+                if (buses.isNotEmpty()) {
+                    for (bus in buses) {
+                        item {
+                            BusListElement(bus)
+                        }
+                    }
+                }
+                else if (apiWasCalled) {
                     item {
                         Text(
                             text = stringResource(R.string.no_buses_found),
@@ -91,7 +98,7 @@ fun BusStopPage(stop: BusStopViewModel) {
                             fontWeight = FontWeight.Bold,
                         )
                     }
-                } else if (!apiWasCalled) {
+                } else {
                     item {
                         Text(
                             text = stringResource(R.string.loading_buses),
@@ -105,12 +112,6 @@ fun BusStopPage(stop: BusStopViewModel) {
                         )
                     }
 
-                } else {
-                    for (bus in buses) {
-                        item {
-                            BusListElement(bus)
-                        }
-                    }
                 }
             }
         }
