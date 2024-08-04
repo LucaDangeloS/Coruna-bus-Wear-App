@@ -5,15 +5,14 @@ Una aplicación para sacarle provecho a los smartwatches que te permite mirar lo
 ![](https://github.com/LucaDangeloS/Coruna-bus-Wear-App/blob/main/demo.gif)
 
 ### TODO:
-- [x] Add stops page
-- [X] Add regular bus updates
-- [ ] Add settings config [companion app]
 - [ ] Add favorites [companion app]
 - [ ] Add favorites stops page
 - [ ] Add stops search page [companion app]
 - [ ] Add bus pages for stops [companion app]
 - [ ] Add bus notifications [mainly companion app]
+- [ ] Add support for ambient mode
+- [x] Add stops page
+- [X] Add regular bus updates
+- [X] Add settings config [companion app]
 - [-] Add manual location updates
 - [-] Add manual bus updates
-- [-] Inspect app elevated battery usage
-- [-] Add support for ambient mode
