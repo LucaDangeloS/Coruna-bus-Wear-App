@@ -57,8 +57,7 @@ import kotlin.math.max
 class MainActivity : FragmentActivity() {
     var definitionsUpdated = false
     private lateinit var locationListener: LocationCallback
-    private var executor = Executors.newSingleThreadScheduledExecutor()
-    private var busTaskScheduler: ScheduledFuture<*>? = null
+    private var busTaskTimer: Timer? = null
     private var busStops: BusStopsListViewModel = BusStopsListViewModel()
     private var vibrator: Vibrator? = null
     private val currentPageIndex: MutableState<Int> = mutableIntStateOf(0)
@@ -154,7 +153,7 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun triggerRegularBusUpdates(pageIndex: Int) {
-        if (busTaskScheduler == null) {
+        if (busTaskTimer == null) {
             if (!loadAllBusesOnLocationFetch) {
                 if (pageIndex == 0) {
                     return
@@ -180,38 +179,42 @@ class MainActivity : FragmentActivity() {
 
     private fun startRegularBusUpdates(busStopsListViewModel: BusStopsListViewModel, initialDelay: Long = 0, checkPageIndex: Int? = null) {
         Log.d(BUS_TAG, "Starting regular bus updates")
-        busTaskScheduler?.cancel(true)
+        busTaskTimer?.cancel()
+        busTaskTimer = null
         val busStops: List<BusStopViewModel> = busStopsListViewModel.busStops.value ?: emptyList()
         val delay: Long = if (currentPageIndex.value == 0)
                 (BUS_API_FETCH_TIME * max((busStops.size.toFloat() / MINUTE_API_LIMIT.toFloat()), 1F)).toLong()
             else BUS_API_FETCH_TIME
         var keepChecking = (initialDelay > 0)
 
-        busTaskScheduler = executor.scheduleAtFixedRate({
-            if (keepChecking) {
-                keepChecking = false
-                Thread.sleep(initialDelay)
-                if (checkPageIndex == currentPageIndex.value) {
-                    return@scheduleAtFixedRate
+        busTaskTimer = Timer()
+        busTaskTimer!!.schedule(object : TimerTask() {
+            override fun run() {
+                if (keepChecking) {
+                    keepChecking = false
+                    Thread.sleep(initialDelay)
+                    if (checkPageIndex == currentPageIndex.value) {
+                        return
+                    }
+
                 }
 
-            }
-
-            // SINGLE STOP
-            if (currentPageIndex.value > 0) {
-                Log.d(BUS_TAG, "Updating single stop")
-                val stop = busStops[currentPageIndex.value - 1]
-                updateSingleStop(stop)
-            } else {
-            // ALL STOPS
-                if (loadAllBusesOnLocationFetch) {
-                    Log.d(BUS_TAG, "Updating all stops")
-                    updateAllStops(busStops)
+                // SINGLE STOP
+                if (currentPageIndex.value > 0) {
+                    Log.d(BUS_TAG, "Updating single stop")
+                    val stop = busStops[currentPageIndex.value - 1]
+                    updateSingleStop(stop)
+                } else {
+                    // ALL STOPS
+                    if (loadAllBusesOnLocationFetch) {
+                        Log.d(BUS_TAG, "Updating all stops")
+                        updateAllStops(busStops)
+                    }
                 }
+                lastAPICallDelay = delay
+                lastAPICallTimestamp = System.currentTimeMillis()
             }
-            lastAPICallDelay = delay
-            lastAPICallTimestamp = System.currentTimeMillis()
-        }, 0L, delay, TimeUnit.MILLISECONDS)
+       }, 0, delay)
     }
 
     private fun updateSingleStop(busStop: BusStopViewModel) {
@@ -292,7 +295,8 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun updateLocation(location: Location) {
-        busTaskScheduler?.cancel(true)
+        busTaskTimer?.cancel()
+        busTaskTimer = null
         val radius = getStringOrDefaultPreference(
             AppConstants.SETTINGS_PREF,
             this,
@@ -336,7 +340,7 @@ class MainActivity : FragmentActivity() {
 //                startRegularBusUpdates(busStops)
             } catch (e: BusProvider.TooManyRequestsException) {
                 Log.d("ERROR_TAG", "Too many requests: $e")
-                if (busTaskScheduler?.isCancelled == true) {
+                if (busTaskTimer == null) {
                     withContext(Dispatchers.Main) {
                         displayContent { UpdateUIError(getString(R.string.too_many_requests)) }
                     }
