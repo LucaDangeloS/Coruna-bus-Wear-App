@@ -113,7 +113,7 @@ fun PagerScaffolding(pagerState: PagerState,
                 selectedColor = MaterialTheme.colors.primary,
                 unselectedColor = MaterialTheme.colors.onSecondary.copy(alpha = 0.6f),
                 modifier = Modifier
-                    .padding(vertical = 6.dp),
+                    .padding(top = 0.dp, start = 4.dp, end = 0.dp, bottom = 6.dp),
             )
         },
         timeText = {
