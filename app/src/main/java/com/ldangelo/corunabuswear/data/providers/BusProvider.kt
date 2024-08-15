@@ -17,11 +17,13 @@ import com.ldangelo.corunabuswear.data.models.Bus
 import com.ldangelo.corunabuswear.data.models.BusLine
 import com.ldangelo.corunabuswear.data.models.BusStop
 import com.ldangelo.corunabuswear.presentation.MainActivity
+import kotlinx.coroutines.delay
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import java.net.SocketTimeoutException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
@@ -262,17 +264,9 @@ suspend fun <T> retryUpdateDefinitions(
         return function()
     } catch (e: BusProvider.UnknownDataException) {
         saveLog(context, e.toString())
-//        if (context.definitionsUpdated) {
-//            // Store in a log file
-//            saveLog(context, e.toString())
-//            Log.d("ERROR_TAG", e.toString())
-//            throw e
-//        }
         context.definitionsUpdated = true
         onRetryDefinitions()
-//        displayContent{
-//            UpdateUILoading("Actualizando índice...")
-//        }
+
         Log.d("DEBUG_TAG", "Updating Bus definitions")
         val (stops, lines, connections) = BusProvider.fetchStopsLinesData()
         clearAllStoredBusData(context)
@@ -289,6 +283,11 @@ suspend fun <T> retryUpdateDefinitions(
     } catch (e: BusProvider.TooManyRequestsException) {
         Log.d("ERROR_TAG", "Too many requests: $e")
         throw e
+    } catch (e: SocketTimeoutException) {
+        Log.d("ERROR_TAG", "Connection error: $e")
+        // await thread sleep and retry
+        delay(3000)
+        return retryUpdateDefinitions(function, context, onRetryDefinitions)
     }
     return function()
 }
