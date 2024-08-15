@@ -117,7 +117,7 @@ class MainActivity : FragmentActivity() {
                     vibrator?.vibrate(vibrationEffect)
                     updateLocation(location)
                 } else {
-                    Log.d("DEBUG_TAG", "Location is null")
+                    Log.d(LOCATION_TAG, "Location is null")
                 }
             }
         }
@@ -131,7 +131,7 @@ class MainActivity : FragmentActivity() {
                 loc.latitude += (Math.random() - 0.5) * 0.005
                 loc.longitude += (Math.random() - 0.5) * 0.005
                 updateLocation(loc)
-                Log.d("DEBUG_TAG", "Mock location updated to ${loc.latitude}, ${loc.longitude}")
+                Log.d(LOCATION_TAG, "Mock location updated to ${loc.latitude}, ${loc.longitude}")
             }, 0, 15000L, TimeUnit.MILLISECONDS)
             return
         }
@@ -147,7 +147,7 @@ class MainActivity : FragmentActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (grantResults.isEmpty() || grantResults.any { it != PERMISSION_GRANTED }) {
-            Log.d("DEBUG_TAG", "Request cancelled")
+            Log.d(LOCATION_TAG, "Request cancelled")
             displayContent { UpdateUIError(getString(R.string.location_denied)) }
             return
         }
@@ -179,7 +179,7 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun startRegularBusUpdates(busStopsListViewModel: BusStopsListViewModel, initialDelay: Long = 0, checkPageIndex: Int? = null) {
-        Log.d("DEBUG_TAG", "Starting regular bus updates")
+        Log.d(BUS_TAG, "Starting regular bus updates")
         busTaskScheduler?.cancel(true)
         val busStops: List<BusStopViewModel> = busStopsListViewModel.busStops.value ?: emptyList()
         val delay: Long = if (currentPageIndex.value == 0)
@@ -199,13 +199,13 @@ class MainActivity : FragmentActivity() {
 
             // SINGLE STOP
             if (currentPageIndex.value > 0) {
-                Log.d("DEBUG_TAG", "Updating single stop")
+                Log.d(BUS_TAG, "Updating single stop")
                 val stop = busStops[currentPageIndex.value - 1]
                 updateSingleStop(stop)
             } else {
             // ALL STOPS
                 if (loadAllBusesOnLocationFetch) {
-                    Log.d("DEBUG_TAG", "Updating all stops")
+                    Log.d(BUS_TAG, "Updating all stops")
                     updateAllStops(busStops)
                 }
             }
@@ -357,6 +357,11 @@ class MainActivity : FragmentActivity() {
                 composable()
             }
         }
+    }
+
+    companion object {
+        const val BUS_TAG = "bus-updates"
+        const val LOCATION_TAG = "location-updates"
     }
 }
 
