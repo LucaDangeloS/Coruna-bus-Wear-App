@@ -2,6 +2,7 @@ package com.ldangelo.corunabuswear.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import android.util.Log
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -33,6 +34,13 @@ private val DarkColorScheme = darkColorScheme(
     background = Color(0xFF1C1B1F),
     onPrimary = Color.White,
     onSecondary = Color.White,
+
+    surface = Color(0xFF1C1B1F),
+    onTertiary = Color.Black,
+    onBackground = Color.White,
+    onSurface = Color.White,
+    /* Other default colors to override
+     */
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -40,14 +48,14 @@ private val LightColorScheme = lightColorScheme(
     secondary = RedTranviasSecondary,
     tertiary = Pink40,
     background = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
+    onPrimary = Color.Black,
     onSecondary = Color.White,
 
-    /* Other default colors to override
     surface = Color(0xFFFFFBFE),
     onTertiary = Color.White,
     onBackground = Color(0xFF1C1B1F),
     onSurface = Color(0xFF1C1B1F),
+    /* Other default colors to override
     */
 )
 
@@ -55,7 +63,7 @@ private val LightColorScheme = lightColorScheme(
 fun CoruñaBusWearTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -67,6 +75,7 @@ fun CoruñaBusWearTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

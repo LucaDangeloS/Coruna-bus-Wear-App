@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -82,10 +84,13 @@ class SettingsActivity : ComponentActivity() {
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                Text(text = header)
+                Text(text = header, color = MaterialTheme.colorScheme.onSurface)
 
                 Button(onClick = { expanded = true }) {
-                    Text("$selectedItem $units")
+                    Text(
+                        "$selectedItem $units",
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
 
                 DropdownMenu(
@@ -94,7 +99,7 @@ class SettingsActivity : ComponentActivity() {
                 ) {
                     items.forEach { item ->
                         DropdownMenuItem(
-                            text = { Text("$item $units") },
+                            text = { Text("$item $units", color = MaterialTheme.colorScheme.primary) },
                             onClick = {
                                 selectedItem = item
                                 expanded = false
@@ -125,7 +130,7 @@ class SettingsActivity : ComponentActivity() {
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                Text(text = header)
+                Text(text = header, color = MaterialTheme.colorScheme.onSurface)
 
                 Switch(
                     checked = checked,
@@ -156,9 +161,11 @@ class SettingsActivity : ComponentActivity() {
                 isLoading = false
             }
 
-            CoruñaBusWearTheme {
+            CoruñaBusWearTheme(
+                dynamicColor = false
+            ) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
                     contentAlignment = Alignment.Center
                 ) {
                     LazyColumn(
@@ -178,7 +185,7 @@ class SettingsActivity : ComponentActivity() {
                                     CircularProgressIndicator()
                                 } else if (prefsData == null) {
                                     // TODO: Error message on connection failure
-                                    Text(text = "Error")
+                                    Text(text = "Error", color = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
@@ -254,7 +261,8 @@ class SettingsActivity : ComponentActivity() {
                                 ) {
                                     Text(
                                         text = stringResource(R.string.launch_wearable_app),
-                                        textAlign = TextAlign.Center
+                                        textAlign = TextAlign.Center,
+                                        color = MaterialTheme.colorScheme.onPrimary
                                     )
                                 }
                             }
