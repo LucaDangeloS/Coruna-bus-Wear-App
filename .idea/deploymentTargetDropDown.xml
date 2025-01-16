@@ -7,18 +7,18 @@
       </entry>
       <entry key="wear">
         <State>
-          <targetSelectedWithDropDown>
+          <runningDeviceTargetSelectedWithDropDown>
             <Target>
-              <type value="QUICK_BOOT_TARGET" />
+              <type value="RUNNING_DEVICE_TARGET" />
               <deviceKey>
                 <Key>
-                  <type value="VIRTUAL_DEVICE_PATH" />
-                  <value value="C:\Users\Lucad\.android\avd\Wear_OS_Small_Round_API_30.avd" />
+                  <type value="SERIAL_NUMBER" />
+                  <value value="192.168.1.121:33669" />
                 </Key>
               </deviceKey>
             </Target>
-          </targetSelectedWithDropDown>
-          <timeTargetWasSelectedWithDropDown value="2024-07-20T12:49:30.149787100Z" />
+          </runningDeviceTargetSelectedWithDropDown>
+          <timeTargetWasSelectedWithDropDown value="2025-01-12T21:29:21.188971800Z" />
         </State>
       </entry>
     </value>
