@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.ui.fragment
+package com.ldangelo.corunabuswear.ui.fragment.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf

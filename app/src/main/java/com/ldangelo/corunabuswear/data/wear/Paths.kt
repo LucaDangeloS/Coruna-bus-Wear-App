@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.data.wearDatalayer
+package com.ldangelo.corunabuswear.data.wear
 
 object MessagePaths {
     object IN {

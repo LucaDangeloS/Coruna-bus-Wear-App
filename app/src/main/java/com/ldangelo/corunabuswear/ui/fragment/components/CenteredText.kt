@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.ui.fragment.composed
+package com.ldangelo.corunabuswear.ui.fragment.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -6,13 +6,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.material.Text
-import com.ldangelo.corunabuswear.data.AppConstants.DEBUG
 import com.ldangelo.corunabuswear.ui.theme.wearColorPalette
 
 @Composable
-private fun ShowText(text: String) {
+fun CenteredText(text: String, color: Color = wearColorPalette.primary) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -20,18 +20,8 @@ private fun ShowText(text: String) {
         Text(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
-            color = wearColorPalette.primary,
+            color = color,
             text = text
         )
     }
-}
-
-@Composable
-fun UpdateUIError(text: String, realError: String = "") {
-    if (DEBUG) {
-        ShowText(text + "\n" + realError)
-    } else {
-        ShowText(text)
-    }
-
 }

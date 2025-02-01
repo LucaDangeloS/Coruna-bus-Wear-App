@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.data.wearDatalayer
+package com.ldangelo.corunabuswear.data.wear
 
 import android.content.Context
 import android.util.Log
@@ -7,8 +7,8 @@ import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.Wearable
 import com.ldangelo.corunabuswear.R
-import com.ldangelo.corunabuswear.data.wearDatalayer.MessagePaths.GET_SETTINGS
-import com.ldangelo.corunabuswear.data.wearDatalayer.MessagePaths.OUT.DEPLOY_SETTINGS
+import com.ldangelo.corunabuswear.data.wear.MessagePaths.GET_SETTINGS
+import com.ldangelo.corunabuswear.data.wear.MessagePaths.OUT.DEPLOY_SETTINGS
 
 fun getNodes(context: Context): Collection<String> {
     return Tasks.await(Wearable.getNodeClient(context).connectedNodes).map { it.id }

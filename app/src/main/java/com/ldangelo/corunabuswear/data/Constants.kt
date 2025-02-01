@@ -8,7 +8,6 @@ object ApiConstants {
 
 object AppConstants {
     const val DEBUG = true
-    const val LOG_FILE = "log_"
     const val SETTINGS_PREF = "settings"
 
     const val STOPS_FETCH_KEY = "stops_fetch"

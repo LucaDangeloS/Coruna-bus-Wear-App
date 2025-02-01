@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.ui.fragment
+package com.ldangelo.corunabuswear.ui.fragment.components
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.FloatingActionButton

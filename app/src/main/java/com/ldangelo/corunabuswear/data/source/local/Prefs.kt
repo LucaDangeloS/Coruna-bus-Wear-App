@@ -1,6 +1,5 @@
 package com.ldangelo.corunabuswear.data.source.local
 import android.content.Context
-import com.ldangelo.corunabuswear.data.AppConstants.LOG_FILE
 import com.google.gson.Gson
 
 fun <BusStop> saveBusStop(context: Context, key: String, obj: BusStop) {
@@ -46,18 +45,6 @@ fun clearAllStoredBusData(context: Context) {
     editor = sharedPreferences.edit()
     editor.clear()
     editor.apply()
-}
-
-// Functions to store logs, appending to the previous log with date and time
-fun saveLog(context: Context, log: String) {
-//    val sharedPreferences = context.getSharedPreferences("Logs", Context.MODE_PRIVATE)
-//    val editor = sharedPreferences.edit()
-//    // put date and time in the log
-//    editor.putString(java.time.LocalDateTime.now().toString(), "$log")
-//    editor.apply()
-    context.openFileOutput(LOG_FILE + java.time.LocalDateTime.now().toString() + ".log", Context.MODE_PRIVATE).use {
-        it.write(log.toByteArray())
-    }
 }
 
 // Functions to save and retrieve a custom objects from SharedPreferences

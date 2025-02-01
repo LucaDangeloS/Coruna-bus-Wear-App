@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.data.models
+package com.ldangelo.corunabuswear.data.model
 import java.lang.Integer.min
 
 data class BusStop (val id: Int, val name: String) {
@@ -11,6 +11,11 @@ data class BusStop (val id: Int, val name: String) {
 
     fun updateDistance(distance: Int) {
         this.distance = distance
+    }
+
+    constructor(id: Int, name: String, distance: Int, buses: List<Bus>) : this(id, name) {
+        this.distance = distance
+        this.buses = buses
     }
 
     @Override

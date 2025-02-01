@@ -50,7 +50,7 @@
 <!--         </service>-->
 
         <service
-            android:name=".data.wearDatalayer.service.DataLayerListenerService"
+            android:name=".data.wear.service.DataLayerListenerService"
             android:exported="true">
 <!--            <intent-filter>-->
 <!--                &lt;!&ndash; listeners receive events that match the action and data filters &ndash;&gt;-->

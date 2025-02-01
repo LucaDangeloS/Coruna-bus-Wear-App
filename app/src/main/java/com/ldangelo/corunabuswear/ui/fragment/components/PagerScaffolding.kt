@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.ui.fragment
+package com.ldangelo.corunabuswear.ui.fragment.components
 
 import android.os.Vibrator
 import androidx.activity.OnBackPressedCallback

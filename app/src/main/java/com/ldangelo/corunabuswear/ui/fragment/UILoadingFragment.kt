@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.ui.fragment.composed
+package com.ldangelo.corunabuswear.ui.fragment
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,14 +22,14 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import com.ldangelo.corunabuswear.data.ContextHolder
-import com.ldangelo.corunabuswear.data.wearDatalayer.openSettings
-import com.ldangelo.corunabuswear.ui.fragment.GearButton
+import com.ldangelo.corunabuswear.data.wear.openSettings
+import com.ldangelo.corunabuswear.ui.fragment.components.GearButton
 import com.ldangelo.corunabuswear.ui.theme.wearColorPalette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
-fun UpdateUILoading(loadingText: String? = null) {
+fun UILoadingFragment(loadingText: String? = null) {
     val endText = ""
     Scaffold (
         timeText = {

@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.data.wearDatalayer.service
+package com.ldangelo.corunabuswear.data.wear.service
 
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.Wearable
@@ -9,6 +9,7 @@ import kotlinx.coroutines.SupervisorJob
 import android.content.Intent
 import android.util.Log
 import com.google.android.gms.wearable.MessageEvent
+import com.ldangelo.corunabuswear.Logger.saveLog
 import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_FETCH_ALL_BUSES_ON_LOCATION_UPDATE
 import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_LOC_DISTANCE
 import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_LOC_INTERVAL
@@ -20,15 +21,14 @@ import com.ldangelo.corunabuswear.data.AppConstants.LOC_INTERVAL_KEY
 import com.ldangelo.corunabuswear.data.AppConstants.SETTINGS_PREF
 import com.ldangelo.corunabuswear.data.AppConstants.STOPS_FETCH_KEY
 import com.ldangelo.corunabuswear.data.AppConstants.STOPS_RADIUS_KEY
-import com.ldangelo.corunabuswear.data.wearDatalayer.MessagePaths.IN.DEPLOY
-import com.ldangelo.corunabuswear.data.wearDatalayer.MessagePaths.GET_SETTINGS
-import com.ldangelo.corunabuswear.data.wearDatalayer.MessagePaths.IN.SET_SETTINGS
+import com.ldangelo.corunabuswear.data.wear.MessagePaths.IN.DEPLOY
+import com.ldangelo.corunabuswear.data.wear.MessagePaths.GET_SETTINGS
+import com.ldangelo.corunabuswear.data.wear.MessagePaths.IN.SET_SETTINGS
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
-import com.ldangelo.corunabuswear.data.wearDatalayer.MessagePaths.SETTINGS
-import com.ldangelo.corunabuswear.data.wearDatalayer.sendCurrentSettings
+import com.ldangelo.corunabuswear.data.wear.MessagePaths.SETTINGS
+import com.ldangelo.corunabuswear.data.wear.sendCurrentSettings
 import com.ldangelo.corunabuswear.data.source.local.getStringOrDefaultPreference
-import com.ldangelo.corunabuswear.data.source.local.saveLog
 import com.ldangelo.corunabuswear.data.source.local.saveStringPreference
 import com.ldangelo.corunabuswear.activity.MainActivity
 import org.json.JSONObject

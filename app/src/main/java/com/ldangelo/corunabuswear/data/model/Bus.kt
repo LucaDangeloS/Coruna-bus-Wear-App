@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.data.models
+package com.ldangelo.corunabuswear.data.model
 
 data class Bus(val id: Int, val line: BusLine) {
     /*

@@ -10,7 +10,6 @@ import android.location.LocationManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-//import com.ldangelo.corunabuswear.data.ContextHolder.getApplicationContext
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -27,17 +26,13 @@ import com.ldangelo.corunabuswear.data.source.local.getStringOrDefaultPreference
 object LocationProvider {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
-    @SuppressLint("MissingPermission")
-    fun fetchLocation(activity: Activity): Location? {
-        val context = getApplicationContext()
-        var location: Location? = null
+    fun init(context: Context) {
         fusedLocationClient = getFusedLocationProviderClient(context)
+    }
 
-        if (!permissionCheck(context, activity)) {
-            Log.d("DEBUG_TAG", "Permission not granted")
-//            throw PermissionNotGrantedException("Permission not granted")
-        }
-
+    @SuppressLint("MissingPermission")
+    fun fetchLocation(): Location? {
+        var location: Location? = null
         // TODO: Add timeout
         location = await(
             fusedLocationClient.getCurrentLocation(
@@ -49,45 +44,7 @@ object LocationProvider {
         return location
     }
 
-    @SuppressLint("MissingPermission")
-    fun startRegularLocationUpdates(locationListener: LocationCallback, activity: Activity) {
-        val context = getApplicationContext()
-        fusedLocationClient = getFusedLocationProviderClient(context)
-
-        if (!permissionCheck(context, activity)) {
-            // Raise permission exception
-            Log.d("DEBUG_TAG", "Permission not granted")
-//            throw PermissionNotGrantedException("Permission not granted")
-        }
-        val interval = getStringOrDefaultPreference(
-            SETTINGS_PREF,
-            context,
-            LOC_INTERVAL_KEY,
-            DEFAULT_LOC_INTERVAL.toString()
-        ).toLong()
-        val distanceUpdate = getStringOrDefaultPreference(
-            SETTINGS_PREF,
-            context,
-            LOC_DISTANCE_KEY,
-            DEFAULT_LOC_DISTANCE.toString()
-        ).toFloat()
-        val locationRequest =
-            LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, interval)
-                .setMinUpdateDistanceMeters(distanceUpdate)
-
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest.build(),
-            locationListener,
-            null
-        )
-    }
-
-    fun stopFetchingLocation(locationListener: LocationCallback) {
-        fusedLocationClient.removeLocationUpdates(locationListener)
-    }
-
-
-    private fun permissionCheck(context: Context, activity: Activity): Boolean {
+    fun permissionCheck(context: Context, activity: Activity): Boolean {
         if (ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_COARSE_LOCATION
@@ -113,6 +70,26 @@ object LocationProvider {
             }
         }
         return true
+    }
+
+    fun requestLocationUpdates(
+        locationRequest: LocationRequest,
+        locationListener: LocationCallback
+    ) {
+        try {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationListener,
+                null
+            )
+        } catch (e: SecurityException) {
+            Log.d("DEBUG_TAG", "Security exception")
+            throw PermissionNotGrantedException("Permission not granted")
+        }
+    }
+
+    fun removeLocationUpdates(locationListener: LocationCallback) {
+        fusedLocationClient.removeLocationUpdates(locationListener)
     }
 }
 

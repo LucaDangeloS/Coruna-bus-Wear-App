@@ -1,4 +1,4 @@
-package com.ldangelo.corunabuswear.data.models
+package com.ldangelo.corunabuswear.data.model
 
 import androidx.compose.ui.graphics.Color as Colorx
 

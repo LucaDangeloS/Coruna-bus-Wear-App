@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,26 +27,28 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
+import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.CardDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.ScalingLazyListState
-import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import com.ldangelo.corunabuswear.data.ContextHolder
-import com.ldangelo.corunabuswear.data.wearDatalayer.openSettings
-import com.ldangelo.corunabuswear.data.models.Bus
-import com.ldangelo.corunabuswear.data.viewmodels.BusStopViewModel
-import com.ldangelo.corunabuswear.data.viewmodels.BusesViewModel
+import com.ldangelo.corunabuswear.data.model.Bus
+import com.ldangelo.corunabuswear.data.model.BusStop
+import com.ldangelo.corunabuswear.data.viewmodels.StopViewModel
+import com.ldangelo.corunabuswear.data.wear.openSettings
+import com.ldangelo.corunabuswear.ui.fragment.components.AutoResizingText
+import com.ldangelo.corunabuswear.ui.fragment.components.GearButton
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 // receives a list of stops
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StopsPage(stops: List<BusStopViewModel>, pagerState: PagerState, animationScope: CoroutineScope) {
+fun StopsPageFragment(stops: List<StopViewModel>, pagerState: PagerState, animationScope: CoroutineScope) {
     val columnPadding = PaddingValues(
         top = 6.dp,
         bottom = 0.dp,
@@ -103,8 +105,9 @@ fun StopsPage(stops: List<BusStopViewModel>, pagerState: PagerState, animationSc
 }
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun StopListElement(stop: BusStopViewModel, index: Int, pagerState: PagerState, animationScope: CoroutineScope) {
+fun StopListElement(stop: StopViewModel, index: Int, pagerState: PagerState, animationScope: CoroutineScope) {
 
+    val buses by stop.buses.collectAsState()
     Card (
         onClick =  {
             animationScope.launch {
@@ -138,15 +141,15 @@ fun StopListElement(stop: BusStopViewModel, index: Int, pagerState: PagerState, 
                 fontWeight = FontWeight.W500,
             )
             // add little icons
-            BusStopsIconRow(stop, stop.buses)
+            BusStopsIconRow(stop.toBusStop(), buses)
         }
     }
 }
 
 @Composable
-fun BusStopsIconRow(busStopViewModel: BusStopViewModel, buses: BusesViewModel) {
-    val obsBuses : List<Bus> by buses.buses.observeAsState(emptyList())
-    val distance : Int by busStopViewModel.distance.observeAsState(9999)
+fun BusStopsIconRow(stop: BusStop, buses: List<Bus>) {
+    val obsBuses : List<Bus> = buses
+    val distance : Int = stop.distance
     val lines = obsBuses.map { it.line }.distinct()
 
     // For each line that stops at this stop, add a little icon that is a rectangle with the color of the line, with the line number inside in white
