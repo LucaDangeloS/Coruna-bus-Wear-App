@@ -1,21 +1,13 @@
-/* While this template provides a good starting point for using Wear Compose, you can always
- * take a look at https://github.com/android/wear-os-samples/tree/main/ComposeStarter and
- * https://github.com/android/wear-os-samples/tree/main/ComposeAdvanced to find the most up to date
- * changes to the libraries and their usages.
- */
-
 package com.ldangelo.corunabuswear.activity
 
 import android.os.Build
 import android.os.Bundle
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.util.Log
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -88,7 +80,6 @@ class MainActivity : FragmentActivity() {
             val animationScope = rememberCoroutineScope()
 
             CoruñaBusWearTheme {
-                // This will run when the busStopsList will have some elements
                 if (busStops.isNotEmpty()) {
                     PagerScaffolding(
                         pagerState,
