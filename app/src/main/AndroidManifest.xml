@@ -37,7 +37,7 @@
 <!--        </service> -->
 
 <!--         <service-->
-<!--             android:name="com.ldangelo.corunabuswear.tiles.nearbyStops.NearbyStopTileService"-->
+<!--             android:name="com.ldangelo.corunabuswear.ui.tiles.NearbyStopTileService"-->
 <!--             android:exported="true"-->
 <!--             android:label="@string/tile_label"-->
 <!--             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">-->
@@ -50,7 +50,7 @@
 <!--         </service>-->
 
         <service
-            android:name=".data.datalayer.DataLayerListenerService"
+            android:name=".data.wear.service.DataLayerListenerService"
             android:exported="true">
 <!--            <intent-filter>-->
 <!--                &lt;!&ndash; listeners receive events that match the action and data filters &ndash;&gt;-->
@@ -87,7 +87,7 @@
             android:value="true" />
 
         <activity
-            android:name="com.ldangelo.corunabuswear.presentation.MainActivity"
+            android:name="com.ldangelo.corunabuswear.activity.MainActivity"
             android:exported="true"
             android:foregroundServiceType="location"
             android:theme="@style/Theme.SplashScreen"
