@@ -20,8 +20,7 @@ class StopViewModel (val id: Int, val name: String) : ViewModel() {
     val buses: StateFlow<List<Bus>> = _buses
 
     fun updateBuses(buses: List<Bus>) {
-//        this._buses.updateBuses(emptyList())
-        _buses.tryEmit(buses)
+        _buses.tryEmit(buses.sortedBy { it.remainingTime })
     }
 
     fun updateDistance(newDistance: Int) {
