@@ -1,8 +1,10 @@
 package com.ldangelo.corunabuswear.ui.fragment.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -21,7 +23,8 @@ fun AutoResizingText(
     maxLines: Int = Int.MAX_VALUE,
     fontWeight: FontWeight
 ) {
-    val textSize = remember {
+    // Remember the size for this specific text to avoid loops during scrolling
+    var textSize by remember(text) {
         mutableStateOf(targetTextSize)
     }
 
@@ -29,16 +32,18 @@ fun AutoResizingText(
         modifier = modifier,
         text = text,
         color = color,
-        fontSize = textSize.value,
+        fontSize = textSize,
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
         textAlign = textAlign,
         fontWeight = fontWeight,
         onTextLayout = { textLayoutResult ->
-            val lineIndex = textLayoutResult.lineCount - 1
-
-            if (textLayoutResult.isLineEllipsized(lineIndex)) {
-                textSize.value *= 0.95f
+            if (textLayoutResult.hasVisualOverflow) {
+                // Only decrease if it actually overflows, and keep it stable
+                val nextSize = textSize * 0.9f
+                if (nextSize.value > 2f) { // Minimum readable size
+                    textSize = nextSize
+                }
             }
         }
     )

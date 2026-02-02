@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -21,13 +22,13 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
+import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.ldangelo.corunabuswear.R
 import com.ldangelo.corunabuswear.data.viewmodels.StopViewModel
 import com.ldangelo.corunabuswear.ui.fragment.components.BusEntry
 import com.ldangelo.corunabuswear.ui.fragment.components.BusStopHeader
-import com.ldangelo.corunabuswear.ui.fragment.components.CenteredText
 
 @Composable
 fun BusStopFragment(stop: StopViewModel) {
@@ -40,28 +41,9 @@ fun BusStopFragment(stop: StopViewModel) {
     val scrollState = ScalingLazyListState()
     val buses by stop.buses.collectAsState()
     val apiWasCalled by stop.apiWasCalled.collectAsState()
-
-//    if (!apiWasCalled) {
-//        Column(
-//            modifier = Modifier.fillMaxWidth(),
-//            verticalArrangement = Arrangement.spacedBy(0.dp),
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ) {
-//            Box(
-//                modifier = Modifier.
-//                fillMaxWidth()
-//                    .align(Alignment.CenterHorizontally)
-//                ,
-//                contentAlignment = Alignment.TopCenter
-//            ) {
-//                BusStopHeader(stop.toBusStop(), scrollState)
-//                CenteredText(
-//                    text = stringResource(R.string.loading_buses),
-//                    color = MaterialTheme.colors.onSecondary
-//                )
-//            }
-//            }
-//    }
+    
+    // Remember the bus stop data to avoid recomposing the header unnecessarily
+    val busStopData = remember(stop.id, stop.name) { stop.toBusStop() }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -75,10 +57,8 @@ fun BusStopFragment(stop: StopViewModel) {
             ,
             contentAlignment = Alignment.TopCenter
         ) {
-            BusStopHeader(stop.toBusStop(), scrollState)
-            //Last updated Text (some timer from when this function is called?) (Add in the pull refresh)
-            //https://developer.android.com/reference/kotlin/androidx/compose/material/pullrefresh/package-summary
-            // Add alternative implementation for square watches?
+            BusStopHeader(busStopData, scrollState)
+            
             ScalingLazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -90,10 +70,8 @@ fun BusStopFragment(stop: StopViewModel) {
                 rotaryScrollableBehavior = null,
             ) {
                 if (buses.isNotEmpty()) {
-                    for (bus in buses) {
-                        item {
-                            BusEntry(bus)
-                        }
+                    items(buses) { bus ->
+                        BusEntry(bus)
                     }
                 }
                 else if (apiWasCalled) {
@@ -122,12 +100,8 @@ fun BusStopFragment(stop: StopViewModel) {
                             fontWeight = FontWeight.Bold,
                         )
                     }
-
                 }
             }
         }
     }
 }
-
-
-

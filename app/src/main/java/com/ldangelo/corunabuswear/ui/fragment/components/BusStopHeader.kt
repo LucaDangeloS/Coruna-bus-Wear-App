@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
@@ -98,15 +99,27 @@ fun BusStopHeader(stop: BusStop, scrollState: ScalingLazyListState) {
                     .weight(stopNameRectWidth)
                     .align(Alignment.Bottom)
             ) {
-                AutoResizingText(
+//                AutoResizingText(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .align(Alignment.BottomCenter),
+//                    text = stop.name,
+//                    textAlign = TextAlign.Center,
+//                    color = MaterialTheme.colors.onPrimary,
+//                    targetTextSize = 15.sp,
+//                    maxLines = 2,
+//                    fontWeight = FontWeight.W500,
+//                )
+                Text(
                     modifier = Modifier
                         .fillMaxSize()
                         .align(Alignment.BottomCenter),
                     text = stop.name,
-                    textAlign = TextAlign.Center,
                     color = MaterialTheme.colors.onPrimary,
-                    targetTextSize = 15.sp,
+                    fontSize = 15.sp,
                     maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
                     fontWeight = FontWeight.W500,
                 )
             }
