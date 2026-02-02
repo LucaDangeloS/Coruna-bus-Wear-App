@@ -3,13 +3,14 @@ package com.ldangelo.corunabuswear.data.repository
 import android.app.Activity
 import android.location.Location
 import android.util.Log
+import com.ldangelo.corunabuswear.data.model.Bus
 import com.ldangelo.corunabuswear.data.model.BusLine
 import com.ldangelo.corunabuswear.data.model.BusStop
 import com.ldangelo.corunabuswear.data.source.apis.BusApi
 import com.ldangelo.corunabuswear.data.source.apis.BusProvider
 import com.ldangelo.corunabuswear.data.source.apis.BusProvider.fetchBuses
+import com.ldangelo.corunabuswear.data.source.local.getBusLine
 import com.ldangelo.corunabuswear.data.source.local.getBusStop
-import com.ldangelo.corunabuswear.data.source.parseBusFromJson
 import com.ldangelo.corunabuswear.data.source.parseConnectionsFromJsonArray
 import org.json.JSONObject
 import java.net.SocketTimeoutException
@@ -31,31 +32,25 @@ class BusesRepository @Inject constructor(
 ): IBusesRepository {
     private val context = activity.applicationContext
     private val mocking = false
-
+    private val busLineCache = mutableMapOf<Int, BusLine>()
 
     override fun getNearbyStops(loc: Location, prevStops: List<BusStop>) : List<BusStop> {
         try {
             val radius = 1000
             val limit = 5
-            // TODO: Remove
-            val jsonStops: List<JSONObject>
-            jsonStops = if (mocking) {
+            val jsonStops: List<JSONObject> = if (mocking) {
                 busProvider.mockStops()
             } else {
                 busProvider.fetchStops(loc.latitude, loc.longitude, radius, limit)
             }
-            val newStops = mutableListOf<BusStop>()
-            for (stop in jsonStops) {
+            
+            val newStops = jsonStops.mapNotNull { stop ->
                 val id = stop.getInt("parada")
                 val storedStop = getBusStop<BusStop>(context, id.toString())
-                    ?: throw IBusesRepository.UnknownDataException("Bus stop $id does not exist in local storage")
-                val distance = stop.getInt("distancia")
-                storedStop.updateDistance(distance)
-                newStops.add(storedStop)
+                storedStop?.apply { updateDistance(stop.getInt("distancia")) }
             }
 
             val stops = mutableListOf<BusStop>()
-
             newStops.forEach { newStop ->
                 val existingStop = prevStops.find { it.id == newStop.id }
                 if (existingStop != null) {
@@ -75,14 +70,31 @@ class BusesRepository @Inject constructor(
         return emptyList()
     }
 
+    private fun getBusLineWithCache(lineaId: Int): BusLine? {
+        return busLineCache.getOrPut(lineaId) {
+            getBusLine<BusLine>(context, lineaId.toString()) ?: return null
+        }
+    }
+
     override fun updateSingleStop(stop: BusStop): BusStop {
         try {
-            // TODO: Remove
-            val buses = if (mocking) {
-                busProvider.mockBuses().map { parseBusFromJson(it, context) }
+            val busesJson = if (mocking) {
+                busProvider.mockBuses()
             } else {
-                fetchBuses(stop.id).map { parseBusFromJson(it, context) }
+                fetchBuses(stop.id)
             }
+            
+            val buses = busesJson.mapNotNull { busObj ->
+                try {
+                    val lineaId = busObj.getInt("linea")
+                    val busLine = getBusLineWithCache(lineaId) ?: return@mapNotNull null
+                    val remainingTime = try { busObj.getInt("tiempo") } catch (e: Exception) { -1 }
+                    Bus(busObj.getInt("bus"), busLine, remainingTime)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            
             stop.updateBuses(buses)
             Log.d(TAG, "Updated stop $stop")
         } catch (e: BusProvider.TooManyRequestsException) {
@@ -94,8 +106,7 @@ class BusesRepository @Inject constructor(
     }
 
     override fun updateAllStops(busStops: List<BusStop>): List<BusStop> {
-        val updatedStops = busStops.toMutableList().map { updateSingleStop(it) }
-        return updatedStops
+        return busStops.map { updateSingleStop(it) }
     }
 
     override fun updateDefinitions(): Triple<List<BusStop>, List<BusLine>, List<BusLine>> {
@@ -103,6 +114,12 @@ class BusesRepository @Inject constructor(
             val (stops, lines, jsonConnections) = busProvider.fetchStopsLinesData()
             var connections = parseConnectionsFromJsonArray(jsonConnections)
             connections = connections.filter { busLine -> !lines.any { it.id == busLine.id } }
+            
+            // Update cache when definitions are updated
+            busLineCache.clear()
+            lines.forEach { busLineCache[it.id] = it }
+            connections.forEach { busLineCache[it.id] = it }
+
             return Triple(stops, lines, connections)
         } catch (e: BusProvider.TooManyRequestsException) {
             Log.d(TAG, "Too many requests: $e")
