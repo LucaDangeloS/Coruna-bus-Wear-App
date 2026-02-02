@@ -1,6 +1,7 @@
 package com.ldangelo.corunabuswear.ui.fragment
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,22 +32,21 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
+import androidx.wear.compose.foundation.lazy.itemsIndexed
 import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.CardDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.ldangelo.corunabuswear.data.ContextHolder
 import com.ldangelo.corunabuswear.data.model.Bus
-import com.ldangelo.corunabuswear.data.model.BusStop
+import com.ldangelo.corunabuswear.data.model.BusLine
 import com.ldangelo.corunabuswear.data.viewmodels.StopViewModel
 import com.ldangelo.corunabuswear.data.wear.openSettings
-import com.ldangelo.corunabuswear.ui.fragment.components.AutoResizingText
 import com.ldangelo.corunabuswear.ui.fragment.components.GearButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-// receives a list of stops
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StopsPageFragment(stops: List<StopViewModel>, pagerState: PagerState, animationScope: CoroutineScope) {
@@ -57,57 +58,42 @@ fun StopsPageFragment(stops: List<StopViewModel>, pagerState: PagerState, animat
     )
     val scrollState = ScalingLazyListState()
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(0.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    ScalingLazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        state = scrollState,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+        anchorType = ScalingLazyListAnchorType.ItemStart,
+        contentPadding = columnPadding,
+        rotaryScrollableBehavior = null,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.CenterHorizontally)
-            ,
-            contentAlignment = Alignment.TopCenter
-        ) {
-            ScalingLazyColumn(
+        itemsIndexed(stops) { index, stop ->
+            StopListElement(stop, index + 1, pagerState, animationScope)
+        }
+        
+        item {
+            Box(
                 modifier = Modifier
-                    .fillMaxSize(),
-                state = scrollState,
-                verticalArrangement = Arrangement.spacedBy(3.dp),
-                anchorType = ScalingLazyListAnchorType.ItemStart,
-                contentPadding = columnPadding,
-                rotaryScrollableBehavior = null,
-            ) {
-                for ((index, stop) in stops.withIndex()) {
-                    item {
-                        StopListElement(stop, index + 1, pagerState, animationScope)
-                    }
+                    .height(10.dp)
+                    .fillMaxWidth()
+            )
+        }
+        item {
+            GearButton(onClick = {
+                val context = ContextHolder.getApplicationContext()
+                ContextHolder.getLifecycleScope().launch(Dispatchers.IO) {
+                    openSettings(context)
                 }
-                // some margin at the end
-                item {
-                    Box(
-                        modifier = Modifier
-                            .height(10.dp)
-                            .fillMaxWidth()
-                    )
-                }
-                item {
-                    GearButton(onClick = {
-                        val context = ContextHolder.getApplicationContext()
-                        ContextHolder.getLifecycleScope().launch(Dispatchers.IO) {
-                            openSettings(context)
-                        }
-                    })
-                }
-            }
+            })
         }
     }
 }
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StopListElement(stop: StopViewModel, index: Int, pagerState: PagerState, animationScope: CoroutineScope) {
-
     val buses by stop.buses.collectAsState()
+    val distance by stop.distance.collectAsState()
+    
     Card (
         onClick =  {
             animationScope.launch {
@@ -140,68 +126,68 @@ fun StopListElement(stop: StopViewModel, index: Int, pagerState: PagerState, ani
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.W500,
             )
-            // add little icons
-            BusStopsIconRow(stop.toBusStop(), buses)
+            BusStopsIconRow(distance, buses, index)
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BusStopsIconRow(stop: BusStop, buses: List<Bus>) {
-    val obsBuses : List<Bus> = buses
-    val distance : Int = stop.distance
-    val lines = obsBuses.map { it.line }.distinct()
-
-    // For each line that stops at this stop, add a little icon that is a rectangle with the color of the line, with the line number inside in white
-    // Stack them horizontally
-
+fun BusStopsIconRow(distance: Int, buses: List<Bus>, index: Int) {
+    val lines = remember(buses) { buses.map { it.line }.distinct() }
     val diameter = 12.dp
 
-    // Stack icons horizontally
     Row (
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 5.dp),
         horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(0.85f),
+            modifier = Modifier
+                .weight(1f)
+                .basicMarquee(
+                    spacing = MarqueeSpacing(20.dp),
+                    repeatDelayMillis = 3000 + index * 1000,
+                    initialDelayMillis = 2000 + index * 1000,
+                ),
             horizontalArrangement = Arrangement.spacedBy(1.5.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             for (line in lines) {
-                Box(
-                    modifier = Modifier
-                        .height(diameter)
-                        .width(diameter)
-                        .clip(RoundedCornerShape(diameter / 2))
-                        .background(
-                            color = line.color,
-                        )
-                )
-                {
-                    AutoResizingText(
-                        text = line.name,
-                        modifier = Modifier
-                            .align(Alignment.Center),
-                        color = MaterialTheme.colors.onPrimary,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        targetTextSize = 5.sp,
-                        fontWeight = FontWeight.W500,
-                    )
-                }
+                BusLineIcon(line, diameter)
             }
         }
         Text(
             text = "$distance m",
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.Bottom),
+            modifier = Modifier.padding(start = 4.dp),
             color = MaterialTheme.colors.onSecondary,
             textAlign = TextAlign.Left,
             fontSize = 7.sp,
             letterSpacing = 0.1.sp,
             fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+fun BusLineIcon(line: BusLine, diameter: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .height(diameter)
+            .width(diameter)
+            .clip(RoundedCornerShape(diameter / 2))
+            .background(color = line.color)
+    ) {
+        Text(
+            text = line.name,
+            modifier = Modifier.align(Alignment.Center),
+            fontSize = 5.sp,
+            color = MaterialTheme.colors.onPrimary,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            fontWeight = FontWeight.W500,
         )
     }
 }
