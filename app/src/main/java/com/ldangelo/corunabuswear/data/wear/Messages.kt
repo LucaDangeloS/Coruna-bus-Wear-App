@@ -15,7 +15,8 @@ fun getNodes(context: Context): Collection<String> {
 }
 
 fun emitMessage(context: Context, path: String, message: String): Task<Int> {
-    val firstNode = getNodes(context).firstOrNull() ?: throw IllegalStateException("No nodes found")
+    val nodes = getNodes(context)
+    val firstNode = nodes.firstOrNull() ?: throw IllegalStateException("No nodes found")
     firstNode.also {
         Log.d("DataLayerService", "$message sent to as ${message.toByteArray()}")
         return Wearable.getMessageClient(context).sendMessage(
@@ -26,12 +27,26 @@ fun emitMessage(context: Context, path: String, message: String): Task<Int> {
     }
 }
 
+fun broadcastMessage(context: Context, path: String, message: String): Task<List<Int>> {
+    val nodes = getNodes(context)
+    Log.d("DataLayerService", nodes.toString());
+    val tasks = nodes.map {
+        Wearable.getMessageClient(context).sendMessage(
+            it,
+            path,
+            message.toByteArray()
+        )
+    }
+    return Tasks.whenAllSuccess<Int>(tasks)
+}
+
 fun openSettings(context: Context) {
     val sendTask: Task<*>;
     try {
-        sendTask = emitMessage(context, DEPLOY_SETTINGS, "")
+//        sendTask = emitMessage(context, DEPLOY_SETTINGS, "")
+        sendTask = broadcastMessage(context, DEPLOY_SETTINGS, "")
     } catch (e: IllegalStateException) {
-//        Toast.makeText(context, R.string.no_device_found, Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, R.string.no_device_found, Toast.LENGTH_SHORT).show()
         return
     }
     sendTask.apply {
