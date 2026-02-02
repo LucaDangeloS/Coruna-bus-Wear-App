@@ -134,9 +134,9 @@ object BusProvider : BusApi {
 
     override fun mockBuses(): List<JSONObject> {
         val jsonBuses: MutableList<JSONObject> = mutableListOf()
-        val linesPool: List<Int> = listOf(2451, 2400, 1700, 200, 300, 1500, 301, 601, 700, 1900, 1100)
+        val linesPool: List<Int> = listOf(2451, 2400, 1700, 200, 300, 1500, 301, 600, 601, 700, 800, 1900, 1100, 1200, 1400, 1800, 2400, 1800, 1801)
         val timesPool: List<Int> = listOf(1, 2, 4, 5, 7, 8, 10, 14, 18, 23, 30, 32, 35, 40, 45, 50, 60)
-        val busesAmount = 6
+        val busesAmount = 13
         val randomLines = linesPool.shuffled().take(busesAmount)
         val randomTimes = timesPool.shuffled().take(busesAmount)
         for (i in 0 until busesAmount) {
