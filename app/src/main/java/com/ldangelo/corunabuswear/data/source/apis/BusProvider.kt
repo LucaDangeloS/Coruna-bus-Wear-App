@@ -12,6 +12,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import androidx.core.graphics.toColorInt
 
 private val client = OkHttpClient()
 
@@ -156,7 +157,7 @@ object BusProvider : BusApi {
     private fun parseBusLineFromJson(json: JSONObject): BusLine {
         val id = json.getInt("id")
         val name = json.getString("lin_comer")
-        val color = Colorx(android.graphics.Color.parseColor("#${json.getString("color")}"))
+        val color = Colorx("#${json.getString("color")}".toColorInt())
         return BusLine(id, name, color)
     }
 

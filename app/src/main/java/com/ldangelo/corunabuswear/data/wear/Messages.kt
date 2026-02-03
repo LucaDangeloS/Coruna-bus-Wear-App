@@ -60,7 +60,7 @@ fun openSettings(context: Context) {
 }
 
 fun sendCurrentSettings(context: Context, settings: String) {
-    val sendTask: Task<*>;
+    val sendTask: Task<*>
     try {
         sendTask = emitMessage(context, GET_SETTINGS, settings)
     } catch (e: IllegalStateException) {
