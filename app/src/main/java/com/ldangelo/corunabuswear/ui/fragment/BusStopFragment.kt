@@ -40,10 +40,13 @@ fun BusStopFragment(stop: StopViewModel) {
     )
     val scrollState = ScalingLazyListState()
     val buses by stop.buses.collectAsState()
+    val distance by stop.distance.collectAsState()
     val apiWasCalled by stop.apiWasCalled.collectAsState()
     
-    // Remember the bus stop data to avoid recomposing the header unnecessarily
-    val busStopData = remember(stop.id, stop.name) { stop.toBusStop() }
+    // Create a dynamic BusStop object that updates whenever distance or buses change
+    val busStopData = remember(stop.id, stop.name, distance, buses) { 
+        stop.toBusStop() 
+    }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -70,7 +73,7 @@ fun BusStopFragment(stop: StopViewModel) {
                 rotaryScrollableBehavior = null,
             ) {
                 if (buses.isNotEmpty()) {
-                    items(buses) { bus ->
+                    items(buses, key = { it.id }) { bus ->
                         BusEntry(bus)
                     }
                 }
