@@ -39,10 +39,10 @@ class MainActivity : FragmentActivity() {
         busViewModel = BusStopsListViewModel(
             this,
             busesRepository = BusesRepository(
-                activity = this
+                context = this
             ),
             locationRepository = LocationRepository(
-                activity = this,
+                context = this,
             )
         )
 

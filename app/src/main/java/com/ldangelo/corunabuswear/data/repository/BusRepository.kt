@@ -1,6 +1,6 @@
 package com.ldangelo.corunabuswear.data.repository
 
-import android.app.Activity
+import android.content.Context
 import android.location.Location
 import android.util.Log
 import com.ldangelo.corunabuswear.data.model.Bus
@@ -14,30 +14,29 @@ import com.ldangelo.corunabuswear.data.source.local.getBusStop
 import com.ldangelo.corunabuswear.data.source.parseConnectionsFromJsonArray
 import org.json.JSONObject
 import java.net.SocketTimeoutException
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 interface IBusesRepository {
     fun updateSingleStop(stop: BusStop): BusStop
     fun updateAllStops(busStops: List<BusStop>): List<BusStop>
-    fun getNearbyStops(loc: Location, prevStops: List<BusStop>): List<BusStop>
+    fun getNearbyStops(loc: Location, prevStops: List<BusStop>, limit: Int = 5): List<BusStop>
     fun updateDefinitions(): Triple<List<BusStop>, List<BusLine>, List<BusLine>>
     class UnknownDataException(message: String) : Exception(message)
 }
 
 @Singleton
 class BusesRepository @Inject constructor(
-    activity: Activity,
+    @ApplicationContext private val context: Context,
     private val busProvider: BusApi = BusProvider,
 ): IBusesRepository {
-    private val context = activity.applicationContext
     private val mocking = false
     private val busLineCache = mutableMapOf<Int, BusLine>()
 
-    override fun getNearbyStops(loc: Location, prevStops: List<BusStop>) : List<BusStop> {
+    override fun getNearbyStops(loc: Location, prevStops: List<BusStop>, limit: Int) : List<BusStop> {
         try {
             val radius = 1000
-            val limit = 5
             val jsonStops: List<JSONObject> = if (mocking) {
                 busProvider.mockStops()
             } else {
@@ -47,7 +46,10 @@ class BusesRepository @Inject constructor(
             val newStops = jsonStops.mapNotNull { stop ->
                 val id = stop.getInt("parada")
                 val storedStop = getBusStop<BusStop>(context, id.toString())
-                storedStop?.apply { updateDistance(stop.getInt("distancia")) }
+                if (storedStop == null) {
+                    throw IBusesRepository.UnknownDataException("Stop $id not found in local storage")
+                }
+                storedStop.apply { updateDistance(stop.getInt("distancia")) }
             }
 
             val stops = mutableListOf<BusStop>()

@@ -1,13 +1,12 @@
 package com.ldangelo.corunabuswear.data.repository
 
-import android.app.Activity
 import android.content.Context
 import android.location.Location
 import android.util.Log
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.ldangelo.corunabuswear.data.source.apis.LocationProvider
-import com.ldangelo.corunabuswear.data.source.apis.PermissionNotGrantedException
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,19 +17,13 @@ interface ILocationRepository {
 
 @Singleton
 class LocationRepository @Inject constructor(
-    activity: Activity,
+    @ApplicationContext private val context: Context,
     private val locationProvider: LocationProvider = LocationProvider
 ): ILocationRepository {
-    private val context: Context = activity.applicationContext
     private var mocking = false
 
     init {
         locationProvider.init(context)
-        if (!locationProvider.permissionCheck(context, activity)) {
-            // Raise permission exception
-            Log.d("DEBUG_TAG", "Permission not granted")
-            throw PermissionNotGrantedException("Permission not granted")
-        }
     }
 
     override fun fetchLocation(): Location {
@@ -60,45 +53,13 @@ class LocationRepository @Inject constructor(
             LocationRequest.Builder(priority, interval)
                 .setMinUpdateDistanceMeters(distance)
 
-        locationProvider.requestLocationUpdates(
-            locationRequest.build(),
-            locationCallback,
-        )
+        try {
+            locationProvider.requestLocationUpdates(
+                locationRequest.build(),
+                locationCallback,
+            )
+        } catch (e: Exception) {
+            Log.e("LocationRepository", "Error requesting location updates", e)
+        }
     }
-
-//    override fun startRegularLocationUpdates(activity: Activity, context: Context): Location {
-//        if (mock) {
-//
-//        }
-//        if (!LocationProvider.permissionCheck(context, activity)) {
-//            // Raise permission exception
-//            Log.d("DEBUG_TAG", "Permission not granted")
-//            throw PermissionNotGrantedException("Permission not granted")
-//        }
-//        val interval = getStringOrDefaultPreference(
-//            SETTINGS_PREF,
-//            context,
-//            LOC_INTERVAL_KEY,
-//            DEFAULT_LOC_INTERVAL.toString()
-//        ).toLong()
-//        val distanceUpdate = getStringOrDefaultPreference(
-//            SETTINGS_PREF,
-//            context,
-//            LOC_DISTANCE_KEY,
-//            DEFAULT_LOC_DISTANCE.toString()
-//        ).toFloat()
-//        val locationRequest =
-//            LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, interval)
-//                .setMinUpdateDistanceMeters(distanceUpdate)
-//
-//        locationProvider.requestLocationUpdates(
-//            locationRequest.build(),
-//            locationCallback,
-//        )
-//        return locationProvider.fetchLocation(context)!!
-//    }
-
-//    override fun stopLocationUpdates() {
-//        locationProvider.removeLocationUpdates(locationCallback)
-//    }
 }
