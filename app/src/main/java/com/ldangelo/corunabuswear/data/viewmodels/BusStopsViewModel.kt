@@ -11,9 +11,11 @@ import com.google.android.gms.location.Priority
 import com.ldangelo.corunabuswear.data.ApiConstants.BUS_API_FETCH_TIME
 import com.ldangelo.corunabuswear.data.ApiConstants.MINUTE_API_LIMIT
 import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_FETCH_ALL_BUSES_ON_LOCATION_UPDATE
+import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_LOC_DISTANCE
 import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_LOC_INTERVAL
 import com.ldangelo.corunabuswear.data.AppConstants.DEFAULT_STOPS_FETCH
 import com.ldangelo.corunabuswear.data.AppConstants.FETCH_ALL_BUSES_ON_LOCATION_UPDATE_KEY
+import com.ldangelo.corunabuswear.data.AppConstants.LOC_DISTANCE_KEY
 import com.ldangelo.corunabuswear.data.AppConstants.LOC_INTERVAL_KEY
 import com.ldangelo.corunabuswear.data.AppConstants.SETTINGS_PREF
 import com.ldangelo.corunabuswear.data.AppConstants.STOPS_FETCH_KEY
@@ -26,10 +28,12 @@ import com.ldangelo.corunabuswear.data.source.local.saveBusConnection
 import com.ldangelo.corunabuswear.data.source.local.saveBusLine
 import com.ldangelo.corunabuswear.data.source.local.saveBusStop
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalTime
 import java.util.Timer
 import java.util.TimerTask
 import javax.inject.Inject
@@ -37,7 +41,7 @@ import kotlin.math.max
 
 @HiltViewModel
 class BusStopsListViewModel @Inject constructor(
-    context: Context,
+    @ApplicationContext private val context: Context,
     private val busesRepository: BusesRepository,
     locationRepository: LocationRepository
 ): ViewModel() {
@@ -60,6 +64,9 @@ class BusStopsListViewModel @Inject constructor(
     var loadedLocation: StateFlow<Boolean> = _loadedLocation
     private val _fetchedStops = MutableStateFlow(false)
     var fetchedStops: StateFlow<Boolean> = _fetchedStops
+
+    private val _lastUpdated = MutableStateFlow<LocalTime?>(null)
+    val lastUpdated: StateFlow<LocalTime?> = _lastUpdated
 
     private var updatedDefinitions = false
 
@@ -89,8 +96,8 @@ class BusStopsListViewModel @Inject constructor(
     private val locationDistance = getStringOrDefaultPreference(
         SETTINGS_PREF,
         context,
-        LOC_INTERVAL_KEY,
-        DEFAULT_LOC_INTERVAL.toString(),
+        LOC_DISTANCE_KEY,
+        DEFAULT_LOC_DISTANCE.toString(),
     ).toFloat()
 
     init {
@@ -102,38 +109,45 @@ class BusStopsListViewModel @Inject constructor(
         )
         // when there's a new location, update the nearby stops
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                location.collect { loc ->
+            location.collect { loc ->
+                try {
                     if (loc != null) {
                         Log.d(TAG, "Location: $loc")
                         _loadedLocation.emit(true)
-                        var stops: List<StopViewModel>
+                        var stops: List<StopViewModel> = emptyList()
                         try {
                             stops = busesRepository.getNearbyStops(loc, busStops.value
-                                .map { it.toBusStop() })
+                                .map { it.toBusStop() }, numberOfStopsPref.toInt())
                                 .map { StopViewModel.fromBusStop(it) }
                         } catch (e: IBusesRepository.UnknownDataException) {
                             if (!updatedDefinitions) {
                                 updateAndStoreDefinitions(context)
-                                stops = busesRepository.getNearbyStops(loc, busStops.value
-                                    .map { it.toBusStop() })
-                                    .map { StopViewModel.fromBusStop(it) }
+                                try {
+                                    stops = busesRepository.getNearbyStops(loc, busStops.value
+                                        .map { it.toBusStop() }, numberOfStopsPref.toInt())
+                                        .map { StopViewModel.fromBusStop(it) }
+                                } catch (e2: Exception) {
+                                    Log.e(TAG, "Error fetching nearby stops after definition update", e2)
+                                }
                             } else {
-                                Log.e(TAG, "Error fetching nearby stops", e)
-                                throw e
+                                Log.e(TAG, "Error fetching nearby stops: Data still unknown after update", e)
                             }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Unexpected error fetching nearby stops", e)
                         }
-                        _busStops.emit(stops)
+                        
                         if (stops.isNotEmpty()) {
+                            _busStops.emit(stops)
+                            _lastUpdated.emit(LocalTime.now())
                             beginPeriodicBusFetch(0)
                         }
                         _fetchedStops.emit(true)
                     } else {
                         Log.d(TAG, "Location is null")
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Inner error in location collection", e)
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error collecting location updates", e)
             }
         }
     }
@@ -165,19 +179,26 @@ class BusStopsListViewModel @Inject constructor(
                 val updatedStop = busesRepository.updateSingleStop(stop.toBusStop())
                 stop.updateBuses(updatedStop.buses)
                 stop.updateApiWasCalled(true)
+                _lastUpdated.emit(LocalTime.now())
             } catch (e: Exception) {
-                throw e
+                // Log the error but don't rethrow to avoid crashing the collect loop
+                Log.e(TAG, "Error in singleBusFetch", e)
             }
         }
     }
 
     private fun allBusesFetch(delay: Long = 300) {
         viewModelScope.launch(Dispatchers.IO) {
-            val updatedStops = busesRepository.updateAllStops(busStops.value.map { it.toBusStop() })
-            busStops.value.forEachIndexed { index, stop ->
-                Thread.sleep(delay)
-                stop.updateBuses(updatedStops[index].buses)
-                stop.updateApiWasCalled(true)
+            try {
+                val updatedStops = busesRepository.updateAllStops(busStops.value.map { it.toBusStop() })
+                busStops.value.forEachIndexed { index, stop ->
+                    Thread.sleep(delay)
+                    stop.updateBuses(updatedStops[index].buses)
+                    stop.updateApiWasCalled(true)
+                }
+                _lastUpdated.emit(LocalTime.now())
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in allBusesFetch", e)
             }
         }
     }
@@ -235,6 +256,33 @@ class BusStopsListViewModel @Inject constructor(
         }
         prevPageIndex = pageIndex
         return
+    }
+
+    fun refresh() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val loc = location.value
+                if (loc != null) {
+                    var stops: List<StopViewModel>
+                    try {
+                        stops = busesRepository.getNearbyStops(loc, busStops.value.map { it.toBusStop() }, numberOfStopsPref.toInt())
+                            .map { StopViewModel.fromBusStop(it) }
+                    } catch (e: IBusesRepository.UnknownDataException) {
+                        updateAndStoreDefinitions(context)
+                        stops = busesRepository.getNearbyStops(loc, busStops.value.map { it.toBusStop() }, numberOfStopsPref.toInt())
+                            .map { StopViewModel.fromBusStop(it) }
+                    }
+                    
+                    if (stops.isNotEmpty()) {
+                        _busStops.emit(stops)
+                        _lastUpdated.emit(LocalTime.now())
+                        beginPeriodicBusFetch(0)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in manual refresh", e)
+            }
+        }
     }
 
     companion object {
