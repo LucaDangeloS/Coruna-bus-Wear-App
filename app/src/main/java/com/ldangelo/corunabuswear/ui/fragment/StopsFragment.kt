@@ -46,13 +46,24 @@ import com.ldangelo.corunabuswear.ui.fragment.components.GearButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Locale
+
+private fun String.toTitleCase(): String {
+    return try {
+        this.lowercase().split(" ").joinToString(" ") { word ->
+            word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        }
+    } catch (e: Exception) {
+        this
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StopsPageFragment(stops: List<StopViewModel>, pagerState: PagerState, animationScope: CoroutineScope) {
     val columnPadding = PaddingValues(
         top = 6.dp,
-        bottom = 0.dp,
+        bottom = 20.dp,
         start = 10.dp,
         end = 10.dp
     )
@@ -118,12 +129,12 @@ fun StopListElement(stop: StopViewModel, index: Int, pagerState: PagerState, ani
                         repeatDelayMillis = 4000 + index * 1500,
                         initialDelayMillis = 1000 + index * 1500,
                     ),
-                text = stop.name,
+                text = stop.name.toTitleCase(),
                 color = MaterialTheme.colors.onSecondary,
                 fontSize = 16.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Start,
                 fontWeight = FontWeight.W500,
             )
             BusStopsIconRow(distance, buses, index)

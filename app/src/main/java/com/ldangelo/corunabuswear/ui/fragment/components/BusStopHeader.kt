@@ -28,7 +28,18 @@ import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.ldangelo.corunabuswear.data.model.BusStop
+import java.util.Locale
 import kotlin.math.max
+
+private fun String.toTitleCase(): String {
+    return try {
+        this.lowercase().split(" ").joinToString(" ") { word ->
+            word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        }
+    } catch (e: Exception) {
+        this
+    }
+}
 
 @Composable
 fun BusStopHeader(stop: BusStop, scrollState: ScalingLazyListState) {
@@ -40,10 +51,8 @@ fun BusStopHeader(stop: BusStop, scrollState: ScalingLazyListState) {
             ((scrollState.centerItemScrollOffset + scrollItemSize) / (scrollItemSize * 2f)) - 0.5f)
 
     val scrollFadingIndex = 2f
-//    println("${scrollState.centerItemIndex} ${scrollState.centerItemScrollOffset}")
     val headerAlpha by animateFloatAsState(
         targetValue = (scrollFadingIndex - (scrollFractionIndex)).coerceIn(0f, 0.999f), label = "headerAlpha",
-//            1 - (pagerState.currentPageOffsetFraction * 2).absoluteValue)
     )
     val headerOffset by animateDpAsState(
         targetValue = (max(((scrollFractionIndex - 1) * scrollItemSize), 0f)).dp, label = "HeaderOffset"
@@ -54,7 +63,6 @@ fun BusStopHeader(stop: BusStop, scrollState: ScalingLazyListState) {
             .fillMaxWidth()
             .height(redRectHeight)
             .offset(y = -headerOffset)
-            // Draw shadow only in the bottom and no shadow in the sides nor top
             .background(MaterialTheme.colors.primary.copy(alpha = headerAlpha))
             .clip(GenericShape { size, _ ->
                 lineTo(size.width, 0f)
@@ -85,8 +93,7 @@ fun BusStopHeader(stop: BusStop, scrollState: ScalingLazyListState) {
             ) {
                 Text(
                     text = "${stop.distance} m",
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd),
+                    modifier = Modifier.align(Alignment.BottomEnd),
                     color = MaterialTheme.colors.onSecondary,
                     textAlign = TextAlign.Right,
                     fontSize = 7.sp,
@@ -99,22 +106,11 @@ fun BusStopHeader(stop: BusStop, scrollState: ScalingLazyListState) {
                     .weight(stopNameRectWidth)
                     .align(Alignment.Bottom)
             ) {
-//                AutoResizingText(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .align(Alignment.BottomCenter),
-//                    text = stop.name,
-//                    textAlign = TextAlign.Center,
-//                    color = MaterialTheme.colors.onPrimary,
-//                    targetTextSize = 15.sp,
-//                    maxLines = 2,
-//                    fontWeight = FontWeight.W500,
-//                )
                 Text(
                     modifier = Modifier
                         .fillMaxSize()
                         .align(Alignment.BottomCenter),
-                    text = stop.name,
+                    text = stop.name.toTitleCase(),
                     color = MaterialTheme.colors.onPrimary,
                     fontSize = 15.sp,
                     maxLines = 2,
@@ -124,8 +120,7 @@ fun BusStopHeader(stop: BusStop, scrollState: ScalingLazyListState) {
                 )
             }
             Box(
-                modifier = Modifier
-                    .weight((1 - stopNameRectWidth) / 2)
+                modifier = Modifier.weight((1 - stopNameRectWidth) / 2)
             ) {}
         }
     }
